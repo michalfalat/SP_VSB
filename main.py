@@ -1,7 +1,7 @@
 import numpy as np
 import math as m
 import cv2
-from configuration import Config as Config
+import configuration as configuration
 import cv2.aruco as aruco
 
 
@@ -12,6 +12,7 @@ class ArucoInfo:
         self.dR = points[2]
         self.dL = points[3]
         self.markerId = markerId
+        self.sample50cm = 15
 
     def getPoints(self):
         return [self.uL, self.uR, self.dL, self.dR]
@@ -27,8 +28,8 @@ class PointInfo:
 
 
 def calculateDistanceBetweenPoints(p1, p2):
-    a = m.pow(abs(p1[0] - p2[0]))
-    b = m.pow(abs(p1[1] - p2[1]))
+    a = m.pow(abs(p1[0] - p2[0]), 2)
+    b = m.pow(abs(p1[1] - p2[1]), 2)
     distance = m.sqrt(a + b)
     return distance
 
@@ -51,8 +52,21 @@ def projectArucoMarker(imgW, imgH, marker=None):
         upperMiddlePoint = calculateMiddlePointBetweenPoints(marker.uL, marker.uR)
         downMiddlePoint = calculateMiddlePointBetweenPoints(marker.dL, marker.dR)
 
+        middleDistance = calculateDistanceBetweenPoints(upperMiddlePoint.getCoordinates(), downMiddlePoint.getCoordinates()) / configuration.MARKER_SIZE
+        estimatedDistance = marker.sample50cm * 50 / middleDistance
+
         cv2.line(img, (upperMiddlePoint.x, upperMiddlePoint.y), (downMiddlePoint.x, downMiddlePoint.y), (0, 0, 255), 1)
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(img, 'Length: ' + str(middleDistance), (10, 30), font, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(img, 'Estimated distance: ' + str(estimatedDistance) + ' cm', (10, 50), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+
     cv2.imshow("Aruco projection", img)
+
+
+def projectArucoPosition(imgW, imgH):
+    img_size = (imgH, imgW, 3)
+    img = np.ones(img_size) * 255
 
 
 # image = cv2.imread("1.png")
