@@ -23,6 +23,14 @@ class PointInfo:
         self.x = coordinates[0]
         self.y = coordinates[1]
 
+    def __getitem__(self, index):
+        if(index == 0):
+            return self.x
+        elif(index == 1):
+            return self.y
+        else:
+            return None
+
     def getCoordinates(self):
         return [self.x, self.y]
 
@@ -52,14 +60,19 @@ def projectArucoMarker(imgW, imgH, marker=None):
         upperMiddlePoint = calculateMiddlePointBetweenPoints(marker.uL, marker.uR)
         downMiddlePoint = calculateMiddlePointBetweenPoints(marker.dL, marker.dR)
 
+        middlePoint = calculateMiddlePointBetweenPoints(upperMiddlePoint, downMiddlePoint)
+
         middleDistance = calculateDistanceBetweenPoints(upperMiddlePoint.getCoordinates(), downMiddlePoint.getCoordinates()) / configuration.MARKER_SIZE
-        estimatedDistance = marker.sample50cm * 50 / middleDistance
+        estimatedDistance = round(marker.sample50cm * 50 / middleDistance, 2)
+
+        estimatedAngle = round(((middlePoint.x * (configuration.CAMERA_ANGLE * 2) / imgW) - configuration.CAMERA_ANGLE) / 2, 1)
 
         cv2.line(img, (upperMiddlePoint.x, upperMiddlePoint.y), (downMiddlePoint.x, downMiddlePoint.y), (0, 0, 255), 1)
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(img, 'Length: ' + str(middleDistance), (10, 30), font, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
         cv2.putText(img, 'Estimated distance: ' + str(estimatedDistance) + ' cm', (10, 50), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(img, 'Estimated angle: ' + str(estimatedAngle) + ' degrees', (10, 70), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
 
     cv2.imshow("Aruco projection", img)
 
