@@ -12,6 +12,8 @@ class ArucoInfo:
         self.dR = points[2]
         self.dL = points[3]
         self.markerId = markerId
+        self.estimatedAngle = None
+        self.estimatedDistance = None
         self.sample50cm = 15
 
     def getPoints(self):
@@ -66,6 +68,8 @@ def projectArucoMarker(imgW, imgH, marker=None):
         estimatedDistance = round(marker.sample50cm * 50 / middleDistance, 2)
 
         estimatedAngle = round(((middlePoint.x * (configuration.CAMERA_ANGLE * 2) / imgW) - configuration.CAMERA_ANGLE) / 2, 1)
+        marker.estimatedAngle = estimatedAngle
+        marker.estimatedDistance = estimatedDistance
 
         cv2.line(img, (upperMiddlePoint.x, upperMiddlePoint.y), (downMiddlePoint.x, downMiddlePoint.y), (0, 0, 255), 1)
 
@@ -74,12 +78,27 @@ def projectArucoMarker(imgW, imgH, marker=None):
         cv2.putText(img, 'Estimated distance: ' + str(estimatedDistance) + ' cm', (10, 50), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
         cv2.putText(img, 'Estimated angle: ' + str(estimatedAngle) + ' degrees', (10, 70), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
 
+    projectArucoPosition(marker)
     cv2.imshow("Aruco projection", img)
 
 
-def projectArucoPosition(imgW, imgH):
-    img_size = (imgH, imgW, 3)
+def projectArucoPosition(marker):
+    if not hasattr(projectArucoPosition, "lastPoint"):
+        projectArucoPosition.lastPoint = None
+    img_size = (700, 700, 3)
     img = np.ones(img_size) * 255
+    cv2.line(img, (300, 100), (350, 100), (0, 0, 0), 4)
+    if(marker != None):
+        middlePoint = (325, 100)
+        angleRadians = (m.pi / 180.0) * (marker.estimatedAngle + 90)
+        posPointX = int(middlePoint[0] + m.cos(angleRadians) * marker.estimatedDistance)
+        posPointY = int(middlePoint[1] + m.sin(angleRadians) * marker.estimatedDistance)
+        projectArucoPosition.lastPoint = (posPointX, posPointY)
+        cv2.circle(img, (posPointX, posPointY), 10, (0, 255, 0), -1)
+    elif(projectArucoPosition.lastPoint != None):
+        cv2.circle(img, projectArucoPosition.lastPoint, 10, (0, 210, 50), -1)
+
+    cv2.imshow("Aruco position", img)
 
 
 # image = cv2.imread("1.png")
@@ -105,7 +124,7 @@ def mainLoop():
                 for i in range(len(corners)):
                     marker = ArucoInfo(corners[i][0], ids[i][0])
                     markers.append(marker)
-                    print(corners[i])
+                    # print(corners[i])
                     projectArucoMarker(width, height, marker)
                 aruco.drawDetectedMarkers(image, corners, ids)
             else:
@@ -114,7 +133,7 @@ def mainLoop():
 
             cv2.imshow('frame', image)
 
-        cv2.waitKey(50)
+        cv2.waitKey(80)
     cv2.destroyAllWindows()
 
 
