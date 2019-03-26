@@ -38,14 +38,14 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
 
 def main():
-    HEIGHT = 700
+    HEIGHT = 500
     THRESHOLD = 50
-    INIT_FRAME = 10
+    INIT_FRAME = 20
     RECORD_VIDEO = True
     # window_name="Cam feed"
     # cv2.namedWindow(window_name)
     # cap = cv2.VideoCapture(1)
-    cap = cv2.VideoCapture("videos\kostol.mp4")
+    cap = cv2.VideoCapture("videos\\ostrava1.mp4")
     cap.set(1, INIT_FRAME)
 
     if (cap.isOpened() == False):
@@ -60,7 +60,7 @@ def main():
     size = (int(frame_width * r), HEIGHT)
 
     if(RECORD_VIDEO):
-        out = cv2.VideoWriter('kostool.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 20.0, size)
+        out = cv2.VideoWriter('ostrava1_tr2_500px29fps.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 29.0, size)
         # out = cv2.VideoWriter('pedestrian.mp4', 0x00000021, 20.0, size)
         # out = cv2.VideoWriter('kostool.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 20.0, size)
 
@@ -76,32 +76,35 @@ def main():
 
     while ret:
         ret, frame = cap.read()
-        frame1 = image_resize(frame1, None, HEIGHT)
-        frame2 = image_resize(frame2, None, HEIGHT)
+        if (frame is None):
+            break
+        #frame1 = image_resize(frame1, None, HEIGHT)
+        # frame2 = image_resize(frame2, None, HEIGHT)
         # VideoFileOutput.write(frame)
 
-        d = cv2.absdiff(frame1, frame2)
+        # d = cv2.absdiff(frame1, frame2)
 
-        grey = cv2.cvtColor(d, cv2.COLOR_BGR2GRAY)
+        # grey = cv2.cvtColor(d, cv2.COLOR_BGR2GRAY)
 
-        blur = cv2.GaussianBlur(grey, (5, 5), 0)
-        ret, th = cv2.threshold(blur, THRESHOLD, 255, cv2.THRESH_BINARY)
-        dilated = cv2.dilate(th, np.ones((3, 3), np.uint8), iterations=3)
-        img, c, h = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # blur = cv2.GaussianBlur(grey, (5, 5), 0)
+        # ret, th = cv2.threshold(blur, THRESHOLD, 255, cv2.THRESH_BINARY)
+        # dilated = cv2.dilate(th, np.ones((3, 3), np.uint8), iterations=3)
+        # img, c, h = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        cv2.drawContours(frame1, c, -1, (0, 255, 0), 2)
-        frame1 = detectPedestrian(frame1)
+        frame_resized = image_resize(frame, None, HEIGHT)
+        frame_result = detectPedestrian(frame_resized)
+        # cv2.drawContours(frame1, c, -1, (0, 255, 0), 2)
 
         # cv2.imshow("win1",frame2)
-        cv2.imshow("inter", frame1)
+        cv2.imshow("inter", frame_result)
 
         if(RECORD_VIDEO):
-            out.write(frame1)
+            out.write(frame_result)
 
         if cv2.waitKey(40) == 27:
             break
-        frame1 = frame2
-        ret, frame2 = cap.read()
+        # frame1 = frame2
+        # ret, frame2 = cap.read()
     cap.release()
 
     if(RECORD_VIDEO):
