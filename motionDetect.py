@@ -38,14 +38,12 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
 
 def main():
-    HEIGHT = 500
-    THRESHOLD = 50
+    HEIGHT = 300
+    THRESHOLD = 20
     INIT_FRAME = 20
-    RECORD_VIDEO = True
-    # window_name="Cam feed"
-    # cv2.namedWindow(window_name)
-    # cap = cv2.VideoCapture(1)
-    cap = cv2.VideoCapture("videos\\ostrava1.mp4")
+    RECORD_VIDEO = False
+    name = "ostrava1.mp4"
+    cap = cv2.VideoCapture("videos\\" + name)
     cap.set(1, INIT_FRAME)
 
     if (cap.isOpened() == False):
@@ -71,12 +69,13 @@ def main():
     else:
         ret = False
 
-    ret, frame1 = cap.read()
-    ret, frame2 = cap.read()
+    ret, frame_prev = cap.read()
+
+    frame_prev_resized = image_resize(frame_prev, None, HEIGHT)
 
     while ret:
-        ret, frame = cap.read()
-        if (frame is None):
+        ret, frame_current = cap.read()
+        if (frame_current is None):
             break
         #frame1 = image_resize(frame1, None, HEIGHT)
         # frame2 = image_resize(frame2, None, HEIGHT)
@@ -91,12 +90,15 @@ def main():
         # dilated = cv2.dilate(th, np.ones((3, 3), np.uint8), iterations=3)
         # img, c, h = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        frame_resized = image_resize(frame, None, HEIGHT)
-        frame_result = detectPedestrian(frame_resized)
-        # cv2.drawContours(frame1, c, -1, (0, 255, 0), 2)
+        frame_current_resized = image_resize(frame_current, None, HEIGHT)
 
-        # cv2.imshow("win1",frame2)
-        cv2.imshow("inter", frame_result)
+        frame_motion = motionDetect(frame_prev_resized, frame_current_resized, THRESHOLD)
+        frame_prev_resized = frame_current_resized
+
+        #frame_result = detectPedestrian(frame_resized)
+
+        cv2.imshow("Motion", frame_motion)
+        # cv2.imshow("Pedestrian", frame_result)
 
         if(RECORD_VIDEO):
             out.write(frame_result)
@@ -112,10 +114,23 @@ def main():
     cv2.destroyAllWindows()
 
 
+def motionDetect(frame1, frame2, THRESHOLD):
+    d = cv2.absdiff(frame1, frame2)
+    grey = cv2.cvtColor(d, cv2.COLOR_BGR2GRAY)
+
+    blur = cv2.GaussianBlur(grey, (5, 5), 0)
+    ret, th = cv2.threshold(blur, THRESHOLD, 255, cv2.THRESH_BINARY)
+    dilated = cv2.dilate(th, np.ones((3, 3), np.uint8), iterations=3)
+    img, c, h = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    cv2.drawContours(frame1, c, -1, (0, 255, 0), 2)
+
+    return frame1
+
+
 def detectPedestrian(image):
      # load the image and resize it to (1) reduce detection time
     # and (2) improve detection accuracy
-    # image = imutils.resize(image, width=min(600, image.shape[1]))
     orig = image.copy()
 
     # detect people in the image
@@ -138,9 +153,6 @@ def detectPedestrian(image):
 
     # show some information on the number of bounding boxes
 
-    # show the output images
-    # cv2.imshow("Before NMS", orig)
-    # cv2.imshow("After NMS", image)
     return image
 
 
