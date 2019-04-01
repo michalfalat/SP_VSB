@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import sys
 from imutils.object_detection import non_max_suppression
 
 
@@ -38,11 +39,11 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
 
 def main():
-    HEIGHT = 300
+    HEIGHT = 700
     THRESHOLD = 20
-    INIT_FRAME = 20
-    RECORD_VIDEO = False
-    name = "ostrava1.mp4"
+    INIT_FRAME = 10
+    RECORD_VIDEO = True
+    name = "face1.mp4"
     cap = cv2.VideoCapture("videos\\" + name)
     cap.set(1, INIT_FRAME)
 
@@ -58,7 +59,7 @@ def main():
     size = (int(frame_width * r), HEIGHT)
 
     if(RECORD_VIDEO):
-        out = cv2.VideoWriter('ostrava1_tr2_500px29fps.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 29.0, size)
+        out = cv2.VideoWriter('face1_700px29fps.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 29.0, size)
         # out = cv2.VideoWriter('pedestrian.mp4', 0x00000021, 20.0, size)
         # out = cv2.VideoWriter('kostool.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 20.0, size)
 
@@ -77,36 +78,24 @@ def main():
         ret, frame_current = cap.read()
         if (frame_current is None):
             break
-        #frame1 = image_resize(frame1, None, HEIGHT)
-        # frame2 = image_resize(frame2, None, HEIGHT)
-        # VideoFileOutput.write(frame)
-
-        # d = cv2.absdiff(frame1, frame2)
-
-        # grey = cv2.cvtColor(d, cv2.COLOR_BGR2GRAY)
-
-        # blur = cv2.GaussianBlur(grey, (5, 5), 0)
-        # ret, th = cv2.threshold(blur, THRESHOLD, 255, cv2.THRESH_BINARY)
-        # dilated = cv2.dilate(th, np.ones((3, 3), np.uint8), iterations=3)
-        # img, c, h = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         frame_current_resized = image_resize(frame_current, None, HEIGHT)
 
-        frame_motion = motionDetect(frame_prev_resized, frame_current_resized, THRESHOLD)
-        frame_prev_resized = frame_current_resized
+        # frame_motion = detectMotion(frame_prev_resized, frame_current_resized, THRESHOLD)
+        # frame_pede = detectPedestrian(frame_current_resized)
+        frame_face = detectFace(frame_current_resized)
 
-        #frame_result = detectPedestrian(frame_resized)
-
-        cv2.imshow("Motion", frame_motion)
-        # cv2.imshow("Pedestrian", frame_result)
+        # cv2.imshow("Motion", frame_motion)
+        # cv2.imshow("Pedestrian", frame_pede)
+        cv2.imshow("Motion", frame_face)
 
         if(RECORD_VIDEO):
-            out.write(frame_result)
+            out.write(frame_face)
 
         if cv2.waitKey(40) == 27:
             break
-        # frame1 = frame2
-        # ret, frame2 = cap.read()
+
+        frame_prev_resized = frame_current_resized
     cap.release()
 
     if(RECORD_VIDEO):
@@ -114,7 +103,26 @@ def main():
     cv2.destroyAllWindows()
 
 
-def motionDetect(frame1, frame2, THRESHOLD):
+def detectFace(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    faces = faceCascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30),
+        flags=cv2.CASCADE_SCALE_IMAGE
+    )
+
+    # Draw a rectangle around the faces
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 128), 2)
+
+    # Display the resulting frame
+    return frame
+
+
+def detectMotion(frame1, frame2, THRESHOLD):
     d = cv2.absdiff(frame1, frame2)
     grey = cv2.cvtColor(d, cv2.COLOR_BGR2GRAY)
 
@@ -158,6 +166,9 @@ def detectPedestrian(image):
 
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+
+cascPath = "haarcascade_frontalface_default.xml"
+faceCascade = cv2.CascadeClassifier(cascPath)
 
 
 main()
