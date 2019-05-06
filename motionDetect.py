@@ -2,6 +2,13 @@ import cv2
 import numpy as np
 import sys
 from imutils.object_detection import non_max_suppression
+from imutils import face_utils
+import dlib
+
+# the facial landmark predictor
+p = "shape_predictor_68_face_landmarks.dat"
+face_detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(p)
 
 
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -39,11 +46,11 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
 
 def main():
-    HEIGHT = 700
+    HEIGHT = 1440  # 1920
     THRESHOLD = 20
-    INIT_FRAME = 10
+    INIT_FRAME = 2
     RECORD_VIDEO = True
-    name = "face1.mp4"
+    name = "auto_8.mp4"
     cap = cv2.VideoCapture("videos\\" + name)
     cap.set(1, INIT_FRAME)
 
@@ -59,7 +66,7 @@ def main():
     size = (int(frame_width * r), HEIGHT)
 
     if(RECORD_VIDEO):
-        out = cv2.VideoWriter('face1_700px29fps.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 29.0, size)
+        out = cv2.VideoWriter('auto8_Landmarks_2K_29fps.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 29.0, size)
         # out = cv2.VideoWriter('pedestrian.mp4', 0x00000021, 20.0, size)
         # out = cv2.VideoWriter('kostool.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 20.0, size)
 
@@ -83,14 +90,16 @@ def main():
 
         # frame_motion = detectMotion(frame_prev_resized, frame_current_resized, THRESHOLD)
         # frame_pede = detectPedestrian(frame_current_resized)
-        frame_face = detectFace(frame_current_resized)
+        # frame_face = detectFace(frame_current_resized)
+        frame_landmarks = detectLandmarks(frame_current_resized)
 
         # cv2.imshow("Motion", frame_motion)
         # cv2.imshow("Pedestrian", frame_pede)
-        cv2.imshow("Motion", frame_face)
+        # cv2.imshow("Motion", frame_face)
+        cv2.imshow("Landmarks", frame_landmarks)
 
         if(RECORD_VIDEO):
-            out.write(frame_face)
+            out.write(frame_landmarks)
 
         if cv2.waitKey(40) == 27:
             break
@@ -119,6 +128,27 @@ def detectFace(frame):
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 128), 2)
 
     # Display the resulting frame
+    return frame
+
+
+def detectLandmarks(frame):
+     # detect faces in the grayscale image
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    rects = face_detector(gray, 0)
+
+    # loop over the face detections
+    for (i, rect) in enumerate(rects):
+        # determine the facial landmarks for the face region, then
+        # convert the facial landmark (x, y)-coordinates to a NumPy
+        # array
+        shape = predictor(gray, rect)
+        shape = face_utils.shape_to_np(shape)
+
+        # loop over the (x, y)-coordinates for the facial landmarks
+        # and draw them on the image
+        for (x, y) in shape:
+            cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
     return frame
 
 
