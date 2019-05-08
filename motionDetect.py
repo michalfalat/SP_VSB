@@ -4,6 +4,7 @@ import sys
 from imutils.object_detection import non_max_suppression
 from imutils import face_utils
 import dlib
+import time
 
 # the facial landmark predictor
 p = "shape_predictor_68_face_landmarks.dat"
@@ -46,10 +47,10 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
 
 def main():
-    HEIGHT = 1440  # 1920
+    HEIGHT = 1000  # 1440  # 1920
     THRESHOLD = 20
     INIT_FRAME = 2
-    RECORD_VIDEO = True
+    RECORD_VIDEO = False
     name = "auto_8.mp4"
     cap = cv2.VideoCapture("videos\\" + name)
     cap.set(1, INIT_FRAME)
@@ -80,6 +81,9 @@ def main():
     ret, frame_prev = cap.read()
 
     frame_prev_resized = image_resize(frame_prev, None, HEIGHT)
+    oldTime = time.time()
+    timeSum = 0
+    counter = 0
 
     while ret:
         ret, frame_current = cap.read()
@@ -97,6 +101,12 @@ def main():
         # cv2.imshow("Pedestrian", frame_pede)
         # cv2.imshow("Motion", frame_face)
         cv2.imshow("Landmarks", frame_landmarks)
+        newTime = time.time()
+        timeDif = newTime - oldTime
+        print("Frame " + str(counter) + ": " + str(timeDif))
+        oldTime = newTime
+        timeSum += timeDif
+        counter += 1
 
         if(RECORD_VIDEO):
             out.write(frame_landmarks)
@@ -106,6 +116,15 @@ def main():
 
         frame_prev_resized = frame_current_resized
     cap.release()
+
+    print("TOTAL TIME:")
+    print(timeSum)
+    print("AVERAGE TIME:")
+    print(timeSum/counter)
+    global faces
+
+    print("FACES DETECTED:")
+    print(faces)
 
     if(RECORD_VIDEO):
         out.release()
@@ -132,10 +151,14 @@ def detectFace(frame):
 
 
 def detectLandmarks(frame):
-     # detect faces in the grayscale image
+    global faces
+    # detect faces in the grayscale image
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     rects = face_detector(gray, 0)
+
+    print(len(rects))
+    faces += len(rects)
 
     # loop over the face detections
     for (i, rect) in enumerate(rects):
@@ -199,6 +222,7 @@ hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
 cascPath = "haarcascade_frontalface_default.xml"
 faceCascade = cv2.CascadeClassifier(cascPath)
+faces = 0
 
 
 main()
