@@ -1,5 +1,6 @@
 import cv2
 
+
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     if image is None:
         return image

@@ -5,13 +5,20 @@ import cv2
 import numpy as np
 from imutils.object_detection import non_max_suppression
 from imutils import face_utils
+import tensorflow as tf
+
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import dlib
+from tf_pose.estimator import TfPoseEstimator
+from tf_pose.networks import get_graph_path, model_wh
+import time
 
 HOG = None
 FACE_CASCADE = None
-FACES_COUNTER = None
+FACES_COUNTER = 0
 FACE_DETECTOR = None
 FACE_PREDICTOR = None
+TF_POSE_ESTIMATOR = None
 
 
 # INITS
@@ -39,6 +46,13 @@ def init_hog():
     HOG = cv2.HOGDescriptor()
     HOG.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
     print("HOG Initialized!")
+
+
+def init_TF_pose_estimator():
+    global TF_POSE_ESTIMATOR
+    model = "mobilenet_thin"
+    TF_POSE_ESTIMATOR = TfPoseEstimator(get_graph_path(model), target_size=(432, 368))
+    print("TF Pose estimator Initialized!")
 
 
 # FUNCTIONS
@@ -79,21 +93,34 @@ def detectLandmarks(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     rects = FACE_DETECTOR(gray, 0)
 
-    print(len(rects))
+    # print(len(rects))
     FACES_COUNTER += len(rects)
 
+    return rects
+
+
+def draw_landmarks(frame, rects):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # loop over the face detections
     for (i, rect) in enumerate(rects):
-        # determine the facial landmarks for the face region, then
-        # convert the facial landmark (x, y)-coordinates to a NumPy
-        # array
         shape = FACE_PREDICTOR(gray, rect)
         shape = face_utils.shape_to_np(shape)
-
-        # loop over the (x, y)-coordinates for the facial landmarks
-        # and draw them on the image
         for (x, y) in shape:
             cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+    return frame
+
+
+def detectTFPose(frame):
+    global TF_POSE_ESTIMATOR
+    if TF_POSE_ESTIMATOR is None:
+        init_TF_pose_estimator()
+
+    humans = TF_POSE_ESTIMATOR.inference(frame, resize_to_default=True, upsample_size=3.0)
+    return humans
+
+
+def draw_TF_pose(frame, humans):
+    frame = TfPoseEstimator.draw_humans(frame, humans, imgcopy=False)
     return frame
 
 
