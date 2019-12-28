@@ -11,6 +11,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import dlib
 from tf_pose.estimator import TfPoseEstimator
 from tf_pose.networks import get_graph_path, model_wh
+from head_orientation import detect_head_orientation
 import time
 
 HOG = None
@@ -96,18 +97,20 @@ def detectLandmarks(frame):
     # print(len(rects))
     FACES_COUNTER += len(rects)
 
+    if(len(rects) == 0):
+        cv2.putText(frame, "HEAD POSITION: -", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 140, 255), 3)
+
     return rects
 
 
-def draw_landmarks(frame, rects):
+def draw_landmarks(frame, rect):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # loop over the face detections
-    for (i, rect) in enumerate(rects):
-        shape = FACE_PREDICTOR(gray, rect)
-        shape = face_utils.shape_to_np(shape)
-        for (x, y) in shape:
-            cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
-    return frame
+    shape = FACE_PREDICTOR(gray, rect)
+    shape = face_utils.shape_to_np(shape)
+    p1, p2 , angle = detect_head_orientation(frame, shape)
+    for (x, y) in shape:
+        cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+    return frame , p1, p2, angle
 
 
 def detectTFPose(frame):
