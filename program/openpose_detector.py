@@ -74,6 +74,17 @@ def initialize(model = "MPI"):
         # Process Image
         datum = op.Datum()
 
+        print("Dataset " + model +  " - List of body parts:")
+        poseModel = None
+        if(model == "MPI"):
+            poseModel = op.PoseModel.MPI_15
+        elif (model == "COCO"):
+            poseModel = op.PoseModel.COCO_18
+        print(op.getPoseBodyPartMapping(poseModel))
+        # print(op.getPoseNumberBodyParts(poseModel))
+        # print(op.getPosePartPairs(poseModel))
+        # print(op.getPoseMapIndex(poseModel))
+
 
         # print("Processing image 2 ..")
         # imageToProcess = cv2.imread(args[0].image_path)
@@ -94,9 +105,8 @@ def detectOPPose(frame):
     global datum
     global opWrapper
     if opWrapper is None:
-        initialize("COCO")
-    print("Processing image...")
+        initialize("MPI")
     datum.cvInputData = frame
     opWrapper.emplaceAndPop([datum])
-    print("Processing image done.")
-    return datum.cvOutputData
+    return datum.poseKeypoints
+    #return datum.cvOutputData

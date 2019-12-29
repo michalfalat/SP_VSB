@@ -6,6 +6,8 @@ from detections import draw_landmarks, draw_TF_pose
 from seat_belt import detect_seat_belt, draw_seatbelt_lines, print_seatbelt_info
 from head_orientation import draw_head_orientation, print_head_orientation_info
 from openpose_detector import detectOPPose
+from pose_unifier import get_coordinates, get_human_image
+from nn import save_train_frame, evaluate
 
 
 def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVideoName="outputVideo"):
@@ -65,8 +67,13 @@ def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVi
         # face = detectFace(frame_current_resized)
 
         frame = frame_current_resized
-        humans = detectTFPose(frame_current_resized)
-        # frame = detectOPPose(frame_current_resized)
+        humansTF = detectTFPose(frame_current_resized)
+        frameNN = get_human_image(frame_current_resized, humansTF[0], "TF", True)
+        evaluate(frameNN)
+
+        # save_train_frame(frameNN, "test", 64)
+        # humansOP = detectOPPose(frame_current_resized)
+        # get_human_image(frame_current_resized, humansOP[0], "OP", True)
         # landmarks = detectLandmarks(frame_current_resized)
         
 
@@ -81,9 +88,10 @@ def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVi
         #     frame = draw_seatbelt_lines(frame, seatbelt_lines, offset)
         #     frame = print_seatbelt_info(frame, seatbelt_lines, (10, 50))
 
-        frame = draw_TF_pose(frame, humans)
+        frame = draw_TF_pose(frame, humansTF)
 
         cv2.imshow("Result", frame)
+        cv2.imshow("Result NN", frameNN)
 
         if (PRINT_STATISTICS):
             newTime = time.time()
