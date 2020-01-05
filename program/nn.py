@@ -8,14 +8,16 @@ from tensorflow import keras
 import numpy as np
 import cv2
 from image_helper import image_resize
+from nn_result import NNResult
 import os
 import matplotlib
 import matplotlib.pyplot as plt
 import random
-ctr = 35
-class_names = ['steering', 'shifting']
+ctr = 0
+class_names = ['steering', 'shifting', 'wrong']
 
 model = None
+modelName = "model_04_01_2020"
 
 
 def save_train_frame(frame, classType, width=64):
@@ -45,18 +47,19 @@ def get_class_index(classType):
         return 0
     elif classType == "shifting":
         return 1
-    else:
-        return 1
+    elif classType == "wrong":
+        return 2
 
 
 def run_train():
     # class_names = ['steering', 'shifting']
     steering_images, steering_labels = load_images_from_folder("steering")
     shifting_images, shifting_labels = load_images_from_folder("shifting")
+    wrong_images, wrong_labels = load_images_from_folder("wrong")
 
 
-    train_images = steering_images + shifting_images
-    train_labels = steering_labels + shifting_labels
+    train_images = steering_images + shifting_images + wrong_images
+    train_labels = steering_labels + shifting_labels + wrong_labels
 
     c = list(zip(train_images, train_labels))
     random.shuffle(c)
@@ -66,7 +69,6 @@ def run_train():
     train_labels = np.array(train_labels)
 
     train_images = train_images / 255.0
-    # train_labels = train_labels / 256.0
 
     matplotlib.use('TKAgg', warn=False, force=True)
 
@@ -89,27 +91,31 @@ def run_train():
     model = keras.Sequential([
         keras.layers.Flatten(),
         keras.layers.Dense(128, activation='relu'),
-        keras.layers.Dense(2, activation='softmax')
+        keras.layers.Dense(3, activation='softmax')
     ])
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(train_images, train_labels, epochs=20)
+    model.fit(train_images, train_labels, epochs=30)
 
-    tf.compat.v1.keras.models.save_model(model, "model.data")
+    tf.compat.v1.keras.models.save_model(model, modelName)
 
-def evaluate(frame, width = 64):
+def evaluate(frame, width = 64, printInfo = False):
     frame = image_resize(frame, width)
     frame = cv2.resize(frame, (64, 64))
     frame = np.array([frame])
     global model
     if model is None:
-        model = tf.compat.v1.keras.models.load_model("model.data")
+        model = tf.compat.v1.keras.models.load_model(modelName)
     prediction = model.predict(frame)[0]
     label = ""
+    result = NNResult()
     for i in range(len(prediction)):
         label  += class_names[i] + ': ' + str(prediction[i] * 100) + " %.\t"
-    print(label)
+        result[class_names[i]] = prediction[i] * 100
+    if(printInfo == True):
+        result.print_info()
+    return result
 
 
 
@@ -172,3 +178,8 @@ def plot_value_array(i, predictions_array, true_label):
 
     thisplot[predicted_label].set_color('red')
     thisplot[true_label].set_color('blue')
+
+
+def draw_nn_result(frame, text, pos, color):
+    cv2.putText(frame, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
+    return frame

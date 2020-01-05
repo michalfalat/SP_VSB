@@ -7,18 +7,20 @@ from seat_belt import detect_seat_belt, draw_seatbelt_lines, print_seatbelt_info
 from head_orientation import draw_head_orientation, print_head_orientation_info
 from openpose_detector import detectOPPose
 from pose_unifier import get_coordinates, get_human_image
-from nn import save_train_frame, evaluate
+from nn import save_train_frame, evaluate, draw_nn_result
+from filters import nn_filter
 
 
 def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVideoName="outputVideo"):
     HEIGHT = maxHeight
     THRESHOLD = 50
-    INIT_FRAME = 0
+    INIT_FRAME = 100
     RECORD_VIDEO = recordVideo
     PRINT_STATISTICS = True
     cap = cv2.VideoCapture(inputVideoName)
     cap.set(1, INIT_FRAME)
     out = None
+    textFromTop = 50
 
     if (cap.isOpened() == False):
         print("Unable to read camera feed")
@@ -59,7 +61,7 @@ def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVi
             print(frame_current)
             print("No more frames")
             continue
-
+        textFromTop = 50
         frame_current_resized = image_resize(frame_current, None, HEIGHT)
 
         # frame = detectMotion(frame_prev_resized, frame_current_resized, THRESHOLD)
@@ -69,9 +71,12 @@ def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVi
         frame = frame_current_resized
         humansTF = detectTFPose(frame_current_resized)
         frameNN = get_human_image(frame_current_resized, humansTF[0], "TF", True)
-        evaluate(frameNN)
+        result = evaluate(frameNN)
+        nn_result_text, nn_color, nn_className = result.process_result()
 
-        # save_train_frame(frameNN, "test", 64)
+        nn_result_text, nn_color, nn_className = nn_filter(nn_result_text, nn_color, nn_className)
+
+        # save_train_frame(frameNN, "various", 64)
         # humansOP = detectOPPose(frame_current_resized)
         # get_human_image(frame_current_resized, humansOP[0], "OP", True)
         # landmarks = detectLandmarks(frame_current_resized)
@@ -80,14 +85,18 @@ def process_video(inputVideoName, recordVideo, maxHeight=800, fps=59.0, outputVi
         # for (i, rect) in enumerate(landmarks):
         #     frame, p1, p2, angle = draw_landmarks(frame, rect)
         #     res = draw_head_orientation(frame, p1, p2, angle)
-        #     print_head_orientation_info(frame, res, (10, 100))
+        #     print_head_orientation_info(frame, res, (10, textFromTop))
+        # textFromTop +=50
 
 
         # for human in humans:
         #     seatbelt_lines, offset = detect_seat_belt(frame_current_resized, human)
         #     frame = draw_seatbelt_lines(frame, seatbelt_lines, offset)
-        #     frame = print_seatbelt_info(frame, seatbelt_lines, (10, 50))
+        #     frame = print_seatbelt_info(frame, seatbelt_lines, (10, textFromTop))
+        # textFromTop +=50
 
+        frame = draw_nn_result(frame, nn_result_text, (10, textFromTop), nn_color)
+        textFromTop += 50
         frame = draw_TF_pose(frame, humansTF)
 
         cv2.imshow("Result", frame)
