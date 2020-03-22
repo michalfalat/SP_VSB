@@ -13,11 +13,16 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 import random
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import OneHotEncoder
+from keras.utils import to_categorical
+
 ctr = 0
 class_names = ['steering', 'shifting', 'wrong']
 
 model = None
-modelName = "model_04_01_2020"
+modelName = "model_15_45.dat"
 
 
 def save_train_frame(frame, classType, width=64):
@@ -29,16 +34,18 @@ def save_train_frame(frame, classType, width=64):
     ctr += 1
 
 
-def load_images_from_folder(classType):
+def load_images_from_folder(classType, size = 64):
     images = []
     labels = []
     folder = "./program/train_nn/" + classType + "/"
+    print("Loading images from: ", folder)
     for filename in os.listdir(folder):
         img = cv2.imread(os.path.join(folder, filename), cv2.IMREAD_GRAYSCALE)
-        img = cv2.resize(img, (64, 64))
+        img = cv2.resize(img, (size, size))
         if img is not None:
             images.append(np.array(img))
             labels.append(get_class_index(classType))
+    print("Done. (" + str(len(images)) + " images)")
     return images, labels
 
 
@@ -52,10 +59,11 @@ def get_class_index(classType):
 
 
 def run_train():
+    size = 32
     # class_names = ['steering', 'shifting']
-    steering_images, steering_labels = load_images_from_folder("steering")
-    shifting_images, shifting_labels = load_images_from_folder("shifting")
-    wrong_images, wrong_labels = load_images_from_folder("wrong")
+    steering_images, steering_labels = load_images_from_folder("steering", size)
+    shifting_images, shifting_labels = load_images_from_folder("shifting", size)
+    wrong_images, wrong_labels = load_images_from_folder("wrong", size)
 
 
     train_images = steering_images + shifting_images + wrong_images
@@ -65,48 +73,110 @@ def run_train():
     random.shuffle(c)
 
     train_images, train_labels = zip(*c)
+
     train_images = np.array(train_images)
     train_labels = np.array(train_labels)
 
     train_images = train_images / 255.0
 
+    train_images, test_images, train_labels, test_labels = train_test_split(train_images, train_labels, test_size=0.1)
+
     matplotlib.use('TKAgg', warn=False, force=True)
 
-    # plt.figure()
-    # plt.imshow(train_images[0])
-    # plt.colorbar()
-    # plt.grid(False)
-    # plt.show()
+    # print(train_images.shape)  # (9584, 64, 64)
+    # print(train_labels.shape)  # (9584,)
 
-    # plt.figure(figsize=(10, 10))
-    # for i in range(25):
-    #     plt.subplot(5, 5, i+1)
-    #     plt.xticks([])
-    #     plt.yticks([])
-    #     plt.grid(False)
-    #     plt.imshow(train_images[i], cmap=plt.cm.binary)
-    #     plt.xlabel(class_names[train_labels[i]])
-    # plt.show()
+    # print(test_images.shape)  # (2396, 64, 64)
+    # print(test_labels.shape)  # (2396,)
+
+    train_images = train_images.reshape(train_images.shape[0], size, size, 1)
+    test_images = test_images.reshape(test_images.shape[0], size, size, 1)
+
+    # print("after reshape: ")
+    # print(train_images.shape)  # (9584, 64, 64)
+    # print(train_labels.shape)  # (9584,)
+
+    # print(test_images.shape)  # (2396, 64, 64)
+    # print(test_labels.shape)  # (2396,)
+
+    #one-hot encode target column
+    train_labels = to_categorical(train_labels)
+    test_labels = to_categorical(test_labels)
+
+    # print("after one-hot: ")
+    # print(train_images.shape)  # (9584, 64, 64)
+    # print(train_labels.shape)  # (9584,)
+
+    # print(test_images.shape)  # (2396, 64, 64)
+    # print(test_labels.shape)  # (2396,)
 
     model = keras.Sequential([
+        keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(size, size, 1)),
+        keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),
+        keras.layers.MaxPooling2D(pool_size=(2, 2)),
         keras.layers.Flatten(),
         keras.layers.Dense(128, activation='relu'),
         keras.layers.Dense(3, activation='softmax')
     ])
     model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
+                  loss='categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(train_images, train_labels, epochs=30)
+    train_history = model.fit(train_images, train_labels, validation_data=(test_images, test_labels), epochs=12, batch_size=128)
+    
 
     tf.compat.v1.keras.models.save_model(model, modelName)
 
-def evaluate(frame, width = 64, printInfo = False):
-    frame = image_resize(frame, width)
-    frame = cv2.resize(frame, (64, 64))
+    print_accurancy(model, test_images, test_labels)
+    show_loss(train_history, modelName)
+    show_accuracy(train_history, modelName)
+
+
+def show_accuracy(data, modelName):
+    plt.plot(data.history['acc'])
+    plt.plot(data.history['val_acc'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    # plt.show()
+    plt.savefig('loss_' + modelName +  '.pdf')
+    plt.clf()
+
+
+def show_loss(data, modelName):
+    plt.plot(data.history['loss'])
+    plt.plot(data.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    # plt.show()
+    plt.savefig('accuracy_' + modelName + '.pdf')
+    plt.clf()
+
+
+def print_accurancy(model, test_images, test_labels):
+    y_pred = model.predict(test_images)
+    #Converting predictions to label
+    pred = list()
+    for i in range(len(y_pred)):
+        pred.append(np.argmax(y_pred[i]))
+    #Converting one hot encoded test label to label
+    test = list()
+    for i in range(len(test_labels)):
+        test.append(np.argmax(test_labels[i]))
+    a = accuracy_score(pred, test)
+    print('Final Accuracy is:', a*100 , '%')
+
+def evaluate(frame, size, printInfo = False):
+    # frame = image_resize(frame, size)
+    frame = cv2.resize(frame, (size, size))
     frame = np.array([frame])
     global model
     if model is None:
         model = tf.compat.v1.keras.models.load_model(modelName)
+
+    frame = frame.reshape(frame.shape[0], size, size, 1)
     prediction = model.predict(frame)[0]
     label = ""
     result = NNResult()

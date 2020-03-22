@@ -10,9 +10,9 @@ class NNResult:
 
     def print_info(self):
         label = ""
-        label += 'Steering: ' + str(self.steering) + " %\t"
-        label += 'Shifting: ' + str(self.shifting) + " %\t"
-        label += 'Wrong: ' + str(self.wrong) + " %\t"
+        label += 'Steering: ' + str(round(self.steering)) + " %\t"
+        label += 'Shifting: ' + str(round(self.shifting)) + " %\t"
+        label += 'Wrong: ' + str(round(self.wrong)) + " %\t"
         print(label)
 
     def process_result(self):
@@ -24,7 +24,7 @@ class NNResult:
                 className = attr
                 maximum = value
                 color = self.get_class_color(className)
-        text = className + ": " + str(maximum) + " %"
+        text = className + ": " + str(round(maximum, 2)) + " %"
         return text, color, className
 
     def get_class_color(self, className):

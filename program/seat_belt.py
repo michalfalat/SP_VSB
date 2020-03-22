@@ -1,28 +1,35 @@
 import cv2
 import numpy as np
 import math
+from pose_unifier import get_coordinates
 
 
-def detect_seat_belt(frame, human):
-    crop_img, crop_offset = crop_seatbelt_area(frame, human)
+def detect_seat_belt(frame, human, framework):
+    crop_img, crop_offset = crop_seatbelt_area(frame, human, framework)
     return detect_seatbelt_lines(crop_img, frame), crop_offset
 
 
-def crop_seatbelt_area(frame, human):
+def crop_seatbelt_area(frame, human, framework):
     npimg = np.copy(frame)
     image_h, image_w = npimg.shape[:2]
-    if(len(human.body_parts) == 0):
-        return None, (0, 0)
+    coordinates = get_coordinates(frame, human, framework)
+    # if len(human.body_parts) == 0:
+    #     return None, (0, 0)
     try:
-        shoulder_left = human.body_parts[2]
-        shoulder_right = human.body_parts[5]
-        hip_left = human.body_parts[8]
-        hip_right = human.body_parts[11]
+        # shoulder_left = human.body_parts[2]
+        # shoulder_right = human.body_parts[5]
+        # hip_left = human.body_parts[8]
+        # hip_right = human.body_parts[11]
 
-        pos_shoulder_left = (int(shoulder_left.x * image_w + 0.5), int(shoulder_left.y * image_h + 0.5))
-        pos_shoulder_right = (int(shoulder_right .x * image_w + 0.5), int(shoulder_right .y * image_h + 0.5))
-        pos_hip_left = (int(hip_left.x * image_w + 0.5), int(hip_left.y * image_h + 0.5))
-        pos_hip_right = (int(hip_right .x * image_w + 0.5), int(hip_right .y * image_h + 0.5))
+        pos_shoulder_left = coordinates[2]
+        pos_shoulder_right = coordinates[3]
+        pos_hip_left = coordinates[4]
+        pos_hip_right = coordinates[5]
+
+        # pos_shoulder_left = (int(shoulder_left.x * image_w + 0.5), int(shoulder_left.y * image_h + 0.5))
+        # pos_shoulder_right = (int(shoulder_right .x * image_w + 0.5), int(shoulder_right .y * image_h + 0.5))
+        # pos_hip_left = (int(hip_left.x * image_w + 0.5), int(hip_left.y * image_h + 0.5))
+        # pos_hip_right = (int(hip_right .x * image_w + 0.5), int(hip_right .y * image_h + 0.5))
         crop_diameter = 10
         crop_diameter_left = 60
         width = abs(pos_shoulder_right[0] - pos_shoulder_left[0])
@@ -44,10 +51,10 @@ def detect_seatbelt_lines(frame, originalFrame):
 
     alpha = 1.3 # calc from image darkness
 
-    cv2.imshow('frame before ', frame)
+    # cv2.imshow('frame before ', frame)
     frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=0)
 
-    cv2.imshow('frame after ', frame)
+    # cv2.imshow('frame after ', frame)
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     border = cv2.borderInterpolate(0, 1, cv2.BORDER_DEFAULT)
     sobel_x = cv2.Sobel(frame_gray, cv2.CV_16S, 1, 0, ksize=3, scale=1, delta=0,  borderType=border)
@@ -60,8 +67,8 @@ def detect_seatbelt_lines(frame, originalFrame):
     retval, thresholded = cv2.threshold(weighted, 100, 255, cv2.THRESH_BINARY)
 
 
-    cv2.imshow('thresholded', thresholded)
-    cv2.imshow('frame', frame)
+    # cv2.imshow('thresholded', thresholded)
+    # cv2.imshow('frame', frame)
 
     coef_y, coef_x = originalFrame.shape[:2]
     rho = 1  # distance resolution in pixels of the Hough grid
@@ -81,20 +88,19 @@ def detect_seatbelt_lines(frame, originalFrame):
 
 
 def filter_seatbelt_lines(lines):
-    #print(len(lines))
     filtered_lines = []
     for line in lines:
         for x1, y1, x2, y2 in line:
             dy = y2 - y1
             dx = x2 - x1
+            if dx == 0:
+                continue
             theta = math.atan(dy/dx)
             theta *= 180 / np.pi
-            #print(str(theta) + ' degrees')
             if(abs(theta) > 20 and abs(theta) < 80):
                filtered_lines.append(line)
             # else:
                # cv2.line(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-    #print(len(filtered_lines))
     return filtered_lines
 
 
@@ -105,8 +111,8 @@ def draw_seatbelt_lines(frame, lines, crop_offset):
     return frame
 
 
-def print_seatbelt_info(frame, seatbelt_lines, pos):
-    if(len(seatbelt_lines) > 2):
+def draw_seatbelt_info(frame, seatbelt_lines, pos):
+    if len(seatbelt_lines) > 2:
         cv2.putText(frame, "SEATBELT ON", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 10), 3)
     else:
         cv2.putText(frame, "SEATBELT OFF", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)

@@ -72,7 +72,7 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst):
     length = 110
     result = False
 
-    print(angle_dst)
+    # print(angle_dst)
 
     if(angle_dst < angle1 or angle_dst > angle2):
         cv2.line(frame, p_src, p_dst, (10, 0, 255), 3)
@@ -92,7 +92,7 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst):
     return result
 
 
-def print_head_orientation_info(frame, res, pos):
+def draw_head_orientation_info(frame, res, pos):
     if(res):
         cv2.putText(frame, "HEAD POSITION: OK ", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 10), 3)
     else:

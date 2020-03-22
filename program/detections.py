@@ -75,7 +75,6 @@ def detectFace(frame):
     )
     if(len(faces_detect) > 0 and len(faces_detect) <= 2):
         FACES_COUNTER += len(faces_detect)
-        print("detect OK")
 
     # Draw a rectangle around the faces
     for (x, y, w, h) in faces_detect:
@@ -84,7 +83,7 @@ def detectFace(frame):
     return frame
 
 
-def detectLandmarks(frame):
+def detectLandmarks(frame, top, printImageStatistics):
     global FACES_COUNTER
     global FACE_PREDICTOR
     global FACE_DETECTOR
@@ -94,11 +93,10 @@ def detectLandmarks(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     rects = FACE_DETECTOR(gray, 0)
 
-    # print(len(rects))
     FACES_COUNTER += len(rects)
 
-    if(len(rects) == 0):
-        cv2.putText(frame, "HEAD POSITION: -", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 140, 255), 3)
+    if len(rects) == 0 and printImageStatistics is True:
+        cv2.putText(frame, "HEAD POSITION: -", (10, top), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 140, 255), 3)
 
     return rects
 
