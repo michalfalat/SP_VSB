@@ -101,12 +101,15 @@ def initialize(model = "MPI"):
         sys.exit(-1)
 
 
-def detectOPPose(frame):
+def detectOPPose(frame, params):
     global datum
     global opWrapper
     if opWrapper is None:
-        initialize("MPI")
+        initialize("COCO")
     datum.cvInputData = frame
     opWrapper.emplaceAndPop([datum])
+
+    if params.showNativeOutput is True:
+        cv2.imshow("OP_POSE native output result", datum.cvOutputData[:, :, :])
     return datum.poseKeypoints
     #return datum.cvOutputData

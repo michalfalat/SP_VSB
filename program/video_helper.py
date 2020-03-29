@@ -57,17 +57,22 @@ def process_video(args):
 
     old_time = time.time()
     time_sum = 0
-    counter = 1
+    counter = 0
+    people_counter = 0
+    skipped_frame_counter = 0
     length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     total_frames = length
 
     while length:
         length -= 1
+        counter += 1
         if args.printContinuosStatistics is True:
             print("Frame " + str(counter) + "/" + str(total_frames) + ":")
         ret, frame_current = cap.read()
         if frame_current is None:
+            skipped_frame_counter += 1
             continue
+
         text_from_top = 50
         frame_current_resized = image_resize(frame_current, None, args.resolutionHeight)
 
@@ -78,11 +83,12 @@ def process_video(args):
 
         frame = frame_current_resized
         if args.framework == "TF_POSE":
-            humans_detected = detectTFPose(frame_current_resized)
+            humans_detected = detectTFPose(frame_current_resized, args)
 
         if args.framework == "OP_POSE":
-            humans_detected = detectOPPose(frame_current_resized)
-        
+            humans_detected = detectOPPose(frame_current_resized, args)
+        if humans_detected[0] is not None:
+            people_counter += 1
         frame_nn = get_human_image(frame_current_resized, humans_detected[0], args.framework, True)
         result_nn = evaluate(frame_nn, 32)
         nn_result_text, nn_color, nn_class_name = result_nn.process_result()
@@ -152,8 +158,6 @@ def process_video(args):
         if args.printContinuosStatistics is True:
             print("Ellapsed time: " + str(time_dif) + "\n\n")
 
-        counter += 1
-
         if args.recordVideo is True:
             out.write(frame)
 
@@ -164,14 +168,16 @@ def process_video(args):
     cap.release()
 
     if args.printFinalStatistics is True:
-
+        not_skipped_counter = counter - skipped_frame_counter
         print("\n\nFINAL STATISTICS:")
         print("USED FRAMEWORK:        \t\t" + args.framework)
         print("RESOLUTION (original): \t\t" + str(frame_width) + "x" + str(frame_height))
         print("RESOLUTION (proceeded):\t\t" + str(size[0]) + "x" + str(size[1]))
         print("TOTAL TIME:            \t\t" + str(time_sum))
-        print("AVERAGE TIME:          \t\t" + str(time_sum/counter))
-
+        print("AVERAGE TIME:          \t\t" + str(time_sum/not_skipped_counter))
+        print("TOTAL FRAMES:          \t\t" + str(not_skipped_counter))
+        print("HUMANS DETECTED:       \t\t" + str(people_counter))
+        print("HUMANS DETECTED [%]:   \t\t" + str(people_counter / not_skipped_counter * 100) + "%")
         # print("FACES DETECTED:")
         # print(FACES_COUNTER)
 

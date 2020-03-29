@@ -17,6 +17,7 @@ def main():
     optional.add_argument('--video-input', dest='videoInput', action='store', help='Absolute path for input video (default: testVideo.mp4)', default='testVideo.mp4')
     optional.add_argument('--init-frame', dest='initFrame', action='store', type=int, help='Determine starting frame of video (default: 0)', default=0)
     optional.add_argument('--record-video', dest='recordVideo', action='store_true', help='Determine, if video should be recorded and saved. Use with --video-output (default: False)', default=False)
+    optional.add_argument('--show-native-output', dest='showNativeOutput', action='store_true', help='Determine, if picture should be shown  in native format from framework result (default: False)', default=False)
     optional.add_argument('--video-output', dest='videoOutput', action='store', help='Absolute path for output video (default: output.mp4)', default='output.mp4')
     optional.add_argument('--resolution-height', dest='resolutionHeight', action='store', type=int, help='Resolution height for processing video in px (default: 800)', default=800)
     optional.add_argument('--fps', dest='videoFps',  action='store', help='Frames per seconds for of video (default: 30)', default=30)

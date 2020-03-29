@@ -111,12 +111,16 @@ def draw_landmarks(frame, rect):
     return frame , p1, p2, angle
 
 
-def detectTFPose(frame):
+def detectTFPose(frame, params):
     global TF_POSE_ESTIMATOR
     if TF_POSE_ESTIMATOR is None:
         init_TF_pose_estimator()
 
     humans = TF_POSE_ESTIMATOR.inference(frame, resize_to_default=True, upsample_size=3.0)
+
+    if params.showNativeOutput is True:
+        image = TfPoseEstimator.draw_humans(frame, humans, imgcopy=True)
+        cv2.imshow("TF_POSE native output result", image)
     return humans
 
 
