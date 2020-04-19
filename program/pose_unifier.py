@@ -101,7 +101,7 @@ def get_human_image(frame, human, poseType, for_nn=False):
     lineWidth = 8
     
 
-    cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
+    #cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
 
     if coordinates_exists(coordinates[0], coordinates[1]):  # head to neck
         cv2.line(frameCopy, coordinates[0], coordinates[1], color, lineWidth)
@@ -163,14 +163,9 @@ def get_nn_image(frame, human, poseType):
                 min_y = int(coordinates[i][1])
             elif(coordinates[i][1] > max_y):
                 max_y = int(coordinates[i][1])
-    # print(min_x)
-    # print(min_y)
-    # print(max_x)
-    # print(max_y)
+                
     width = max_x - min_x
     height = max_y - min_y
-
-    # coordinates = list(coordinates)
 
     offset = 30
 
@@ -180,11 +175,7 @@ def get_nn_image(frame, human, poseType):
         coordinates[i][1] = int(coordinates[i][1] - min_y+offset)
         coordinates[i] = tuple(coordinates[i])
 
-    # print(width)
-    # print(height)
-    # crop_img = frame[min_y-offset:min_y+height+offset, min_x-offset:min_x+width+offset].copy()
     crop_img = np.zeros((height+2*offset, width+2*offset, 1), dtype="uint8")
 
-    # cv2.imshow("cropped", crop_img)
 
     return crop_img, coordinates

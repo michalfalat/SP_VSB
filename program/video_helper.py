@@ -10,6 +10,7 @@ from openpose_detector import detectOPPose
 from pose_unifier import get_coordinates, get_human_image
 from nn import save_train_frame, evaluate, draw_nn_result
 from filters import nn_filter
+import numbers
 
 
 class DETECTION_TYPE(Enum):
@@ -82,22 +83,29 @@ def process_video(args):
         # face = detectFace(frame_current_resized)
 
         frame = frame_current_resized
-        if args.framework == "TF_POSE":
-            humans_detected = detectTFPose(frame_current_resized, args)
+        if args.detectBody is True:
+            if args.framework == "TF_POSE":
+                humans_detected = detectTFPose(frame_current_resized, args)
+                if humans_detected is None or len(humans_detected)< 1:
+                    continue
 
-        if args.framework == "OP_POSE":
-            humans_detected = detectOPPose(frame_current_resized, args)
-        if humans_detected[0] is not None:
-            people_counter += 1
-        frame_nn = get_human_image(frame_current_resized, humans_detected[0], args.framework, True)
-        result_nn = evaluate(frame_nn, 32)
-        nn_result_text, nn_color, nn_class_name = result_nn.process_result()
 
-        if args.useFiltering is True:
-           nn_result_text, nn_color, nn_class_name = nn_filter(nn_result_text, nn_color, nn_class_name, args.printContinuosStatistics)
+            if args.framework == "OP_POSE":
+                humans_detected = detectOPPose(frame_current_resized, args)
+                if humans_detected is None or humans_detected.size < 2 or isinstance(humans_detected, numbers.Number) is True:
+                    continue
 
-        if args.printContinuosStatistics is True:
-            result_nn.print_info()
+            if humans_detected[0] is not None:
+                people_counter += 1
+            frame_nn = get_human_image(frame_current_resized, humans_detected[0], args.framework, True)
+            result_nn = evaluate(frame_nn, 32)
+            nn_result_text, nn_color, nn_class_name = result_nn.process_result()
+
+            if args.useFiltering is True:
+                nn_result_text, nn_color, nn_class_name = nn_filter(nn_result_text, nn_color, nn_class_name, args.printContinuosStatistics)
+
+            if args.printContinuosStatistics is True:
+                result_nn.print_info()
 
         # save_train_frame(frame_nn, "various", 64)
         # humansOP = detectOPPose(frame_current_resized)
@@ -110,8 +118,8 @@ def process_video(args):
             landmarks = detectLandmarks(frame_current_resized, text_from_top, args.imagePrintStatistics)
 
             for (i, rect) in enumerate(landmarks):
-                frame, p_1, p_2, angle = draw_landmarks(frame, rect)
-                res = draw_head_orientation(frame, p_1, p_2, angle)
+                frame, p_1, p_2, angle = draw_landmarks(frame, rect)                
+                res = draw_head_orientation(frame, p_1, p_2, angle, args)
 
                 if args.imagePrintStatistics is True:
                     draw_head_orientation_info(frame, res, (10, text_from_top))
@@ -133,7 +141,7 @@ def process_video(args):
             if args.imagePrintStatistics is True:
                 text_from_top += 50
 
-        if args.imagePrintStatistics is True:
+        if args.imagePrintStatistics is True and args.detectBody is True:
             frame = draw_nn_result(frame, nn_result_text, (10, text_from_top), nn_color)
             text_from_top += 50
 
@@ -144,7 +152,8 @@ def process_video(args):
         # if args.framework == "OP_POSE":
         #     frame = draw_TF_pose(frame, humans_detected)
 
-        frame = get_human_image(frame, humans_detected[0], args.framework)
+        if args.detectBody is True:
+            frame = get_human_image(frame, humans_detected[0], args.framework)
 
         if args.showOutput is True:
             cv2.imshow("Result", frame)

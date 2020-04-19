@@ -4,7 +4,7 @@ import math
 
 def detect_head_orientation(frame, shape):
 
-    size = frame.shape
+    input_image = frame.shape
     #2D image points. If you change the image, you need to change vector
     image_points = np.array([
         shape[33],     # Nose tip
@@ -16,7 +16,7 @@ def detect_head_orientation(frame, shape):
     ], dtype="double")
 
     # 3D model points.
-    model_points = np.array([
+    model_points_3d = np.array([
         (0.0, 0.0, 0.0),             # Nose tip
         (0.0, -330.0, -65.0),        # Chin
         (-225.0, 170.0, -135.0),     # Left eye left corner
@@ -27,20 +27,21 @@ def detect_head_orientation(frame, shape):
     ])
 
 
-    # Camera internals
-
-    focal_length = size[1]
-    center = (size[1]/2, size[0]/2)
+    # Camera matrix calcualtion
+    focal_length = input_image[1]
+    center = (input_image[1]/2, input_image[0]/2)
     camera_matrix = np.array(
-        [[focal_length, 0, center[0]],
-        [0, focal_length, center[1]],
-        [0, 0, 1]], dtype="double"
+        [
+            [focal_length,  0,            center[0]],
+            [0,             focal_length, center[1]],
+            [0,             0,            1       ]
+        ], dtype="double"
     )
 
     # print ("Camera Matrix :\n {0}".format(camera_matrix))
 
     dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
-    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points_3d, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
     # print ("Rotation Vector:\n {0}".format(rotation_vector))
     # print ("Translation Vector:\n {0}".format(translation_vector))
@@ -52,8 +53,8 @@ def detect_head_orientation(frame, shape):
 
     (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
 
-    for p in image_points:
-        cv2.circle(frame, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
+    #for p in image_points:
+    #    cv2.circle(frame, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
 
 
     p1 = (int(image_points[0][0]), int(image_points[0][1]))
@@ -66,7 +67,7 @@ def detect_head_orientation(frame, shape):
 
 
 
-def draw_head_orientation(frame, p_src, p_dst, angle_dst):
+def draw_head_orientation(frame, p_src, p_dst, angle_dst, args):
     angle1 = 2
     angle2 = 100
     length = 110
@@ -74,7 +75,10 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst):
 
     # print(angle_dst)
 
-    if(angle_dst < angle1 or angle_dst > angle2):
+    if args.detectHeadLimit is False:
+        cv2.line(frame, p_src, p_dst, (255, 0, 20), 3)
+        result = True
+    elif(angle_dst < angle1 or angle_dst > angle2):
         cv2.line(frame, p_src, p_dst, (10, 0, 255), 3)
     else:
         cv2.line(frame, p_src, p_dst, (255, 0, 0), 2)
@@ -86,14 +90,17 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst):
     p2_x = int(round(p_src[0] + length * np.cos(angle2 * np.pi / 180.0)))
     p2_y = int(round(p_src[1] + length * np.sin(angle2 * np.pi / 180.0)))
 
-    cv2.line(frame, p_src, (p1_x, p1_y), (0, 127, 255), 1)
-    cv2.line(frame, p_src, (p2_x, p2_y), (0, 127, 255), 1)
+    if args.detectHeadLimit is True:
+        cv2.line(frame, p_src, (p1_x, p1_y), (0, 127, 255), 1)
+        cv2.line(frame, p_src, (p2_x, p2_y), (0, 127, 255), 1)
 
     return result
 
 
 def draw_head_orientation_info(frame, res, pos):
-    if(res):
+    if res == -1:
+        cv2.putText(frame, "HEAD POSITION: SKIP ", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 127), 3)
+    elif res:
         cv2.putText(frame, "HEAD POSITION: OK ", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 10), 3)
     else:
         cv2.putText(frame, "HEAD POSITION: OUT OF RANGE", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
