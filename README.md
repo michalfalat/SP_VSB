@@ -20,40 +20,59 @@ This repository contains set of tools to analyze  driver's behaviour during driv
 * Keras 2.3.1
 * CUDA 10.1
 * OpenPose instalation + datasets to use (more info on [official Openpose GitHub](https://github.com/CMU-Perceptual-Computing-Lab/openpose))
-* TF Pose estimation instalation  + datasets to use (more info on [official TF Pose estimation GitHub](https://github.com/ildoonet/tf-pose-estimation))
+* TF Pose estimation installation  + datasets to use (more info on [official TF Pose estimation GitHub](https://github.com/ildoonet/tf-pose-estimation))
 * Lot of luck :) 
 
 
-# Usage
+# Driver Analysator
 configuration is built on console arguments. Basic command for starting program is:
 
+
+## Basic usage
 ``` 
-python main.py  --video-input testVideo.mp4 --record-video
+python main.py  --video-input testVideo.mp4
 ```
 
-## List of existing arguments
+## List of existing arguments for main.py
 ```
---video-input'                        // input video name
---framework'                          // framework to use (TF_POSE or OP_POSE)
---model_name'                         // trained model name from neural network 
---save-train_image'                   // if frame of video should be saved  for neural network training
---save-train_image_path'              // path for saving train image
---op-dataset'                         // MPI or COCO 
---init-frame'                         // starting frame of video (default 0)
---record-video'                       // if proceeded video should be saved to filesystem 
---record-video-name'                  // name for saved video (default 'output.mp4')
---record-video-fps'                   // what FPS should be used for saved video
---show-native-output'                 // if default format from framework should be shown
---resolution-height'                  // resolution height for videos
---no-final-statistics'                // disable final stats
---no-continuos-statistics'            // disable continous stats
---no-image-print-statistics'          // disable printing  stats directly to the image
---no-head-orientation-detection'      // disable head orientation detection
---no-head-orientation-limit'          // disable head iroentation helper lines  for  range
---no-seat-belt-detection'             // not used 
---no-body-detection'                  //
---no-showing-output'                  //
---no-nn-filtering'                    // if results of neural network should not be filtered (worse accuracy)
+--video-input  <value>              // input video name (default: testVideo.mp4)
+--framework  <value>                // framework to use (TF_POSE or OP_POSE) (default: OP_POSE)
+--model_name  <value>               // trained model name from neural network (default: defaultModel.data)
+--save-train_image                  // save frames for neural network training
+--save-train_image_path  <value>    // path for saving train image
+--op-dataset  <value>               // MPI or COCO (default: COCO)
+--init-frame  <value>               // starting frame of video (default: 0)
+--record-video                      // if proceeded video should be saved to filesystem 
+--record-video-name  <value>        // name for saved video (default 'output.mp4')
+--record-video-fps  <value>         // what FPS should be used for saved video (default: 30)
+--show-native-output                // if default format from framework should be shown
+--resolution-height   <value>       // resolution height for videos (default: 800)
+--no-final-statistics               // disable final stats
+--no-continuos-statistics           // disable continous stats
+--no-image-print-statistics         // disable printing  stats directly to the image
+--no-head-orientation-detection     // disable head orientation detection
+--no-head-orientation-limit         // disable head orientation helper lines for allowed range
+--no-seat-belt-detection            // not used 
+--no-body-detection                 // disable pose detection
+--no-showing-output                 // disable showing images during processing
+--no-nn-filtering                   // if results of neural network should not be filtered (worse accuracy)
+```
+
+
+
+# Training neural network 
+configuration is built on console arguments. Basic command for starting program is:
+
+## Basic usage
+``` 
+python train_nn.py
+```
+
+## List of existing arguments for train_nn.py
+```
+--model_name  <value>               // trained model name from neural network (default: defaultModel.data)
+--path  <value>                     // path to folder, which contains training images (default: './program/train_nn/')
+--epochs  <value>                   // number of training epochs (default: 12)
 ```
 
 ## More info will be added soon...
