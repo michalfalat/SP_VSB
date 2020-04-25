@@ -1,4 +1,3 @@
-from nn import run_train, run_test
 from video_helper import process_video
 import argparse
 """Main file"""
@@ -12,7 +11,6 @@ def main():
     parser._action_groups.pop()
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
-    #required.add_argument('--type', dest='programType', action='store',  help='Determine which action should be  proceeded (TRAIN_NN, TEST_NN, PROCESS_VIDEO)', required=True)
     optional.add_argument('--framework', dest='framework', action='store', help='Determine, which framework should be used  (TF_POSE or OP_POSE) (default: TF_POSE)', default='OP_POSE')
     optional.add_argument('--video-input', dest='videoInput', action='store', help='Absolute path for input video (default: testVideo.mp4)', default='testVideo.mp4')
     optional.add_argument('--op-dataset', dest='opDataset', action='store', help='Dataset for OpenPose estimator COCO or MPI (default: COCO)', default='COCO')
@@ -32,10 +30,6 @@ def main():
     optional.add_argument('--no-showing-output', dest='showOutput', action='store_false', help='Determine if result images should not be shown during processing', default=True)
     optional.add_argument('--no-nn-filtering', dest='useFiltering', action='store_false', help='Determine if neural network result should not be filtered', default=True)
     args = parser.parse_args()
-    # run_train()
     process_video(args)
-    # run_test()
-    # process_video('videos\\auto_7.mp4', False)
-
 
 main()

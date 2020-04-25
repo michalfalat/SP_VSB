@@ -1,4 +1,8 @@
 
+from head_orientation import detect_head_orientation
+from tf_pose.networks import get_graph_path
+from tf_pose.estimator import TfPoseEstimator
+import dlib
 """detections"""
 from pathlib import Path
 import cv2
@@ -8,11 +12,6 @@ from imutils import face_utils
 import tensorflow as tf
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-import dlib
-from tf_pose.estimator import TfPoseEstimator
-from tf_pose.networks import get_graph_path, model_wh
-from head_orientation import detect_head_orientation
-import time
 
 HOG = None
 FACE_CASCADE = None
@@ -58,7 +57,7 @@ def init_TF_pose_estimator():
 
 # FUNCTIONS
 
-def detectFace(frame):
+def detect_face(frame):
     global FACES_COUNTER
     global FACE_CASCADE
     if FACE_CASCADE is None:
@@ -83,7 +82,7 @@ def detectFace(frame):
     return frame
 
 
-def detectLandmarks(frame, top, printImageStatistics):
+def detect_landmarks(frame, top, printImageStatistics):
     global FACES_COUNTER
     global FACE_PREDICTOR
     global FACE_DETECTOR
@@ -105,13 +104,13 @@ def draw_landmarks(frame, rect):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     shape = FACE_PREDICTOR(gray, rect)
     shape = face_utils.shape_to_np(shape)
-    p1, p2 , angle = detect_head_orientation(frame, shape)
+    p_1, p_2, angle = detect_head_orientation(frame, shape)
     for (x, y) in shape:
         cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
-    return frame , p1, p2, angle
+    return frame, p_1, p_2, angle
 
 
-def detectTFPose(frame, params):
+def detect_tf_pose(frame, params):
     global TF_POSE_ESTIMATOR
     if TF_POSE_ESTIMATOR is None:
         init_TF_pose_estimator()
@@ -129,7 +128,8 @@ def draw_TF_pose(frame, humans):
     return frame
 
 
-def detectMotion(frame1, frame2, THRESHOLD):
+# NOT USED
+def detect_motion(frame1, frame2, THRESHOLD):
     d = cv2.absdiff(frame1, frame2)
     grey = cv2.cvtColor(d, cv2.COLOR_BGR2GRAY)
 
@@ -143,7 +143,8 @@ def detectMotion(frame1, frame2, THRESHOLD):
     return frame1
 
 
-def detectPedestrian(image):
+# NOT USED
+def detect_pedestrian(image):
     global HOG
     if HOG is None:
         init_hog()

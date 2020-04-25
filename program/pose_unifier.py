@@ -6,7 +6,7 @@ def get_coordinates(frame, human, poseType):
     npimg = np.copy(frame)
     image_h, image_w = npimg.shape[:2]
     if(poseType == "OP_POSE"):
-        head = (int(human[0][0]), int((human[0][1] + human[1][1])/2))
+        head = (int(human[0][0]), int((human[0][1])))
         neck = (int(human[1][0]), int(human[1][1]))
         shoulder_left = (int(human[5][0]), int(human[5][1]))
         shoulder_right = (int(human[2][0]), int(human[2][1]))
@@ -96,12 +96,12 @@ def get_human_image(frame, human, poseType, for_nn=False):
         coordinates = get_coordinates(frame, human, poseType)
         frameCopy = frame.copy()
         color = (232, 152, 0)
-        head_thickness = 2
-        head_radius = 60
+        head_thickness = 3
+        head_radius = 40
     lineWidth = 8
     
 
-    #cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
+    cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
 
     if coordinates_exists(coordinates[0], coordinates[1]):  # head to neck
         cv2.line(frameCopy, coordinates[0], coordinates[1], color, lineWidth)

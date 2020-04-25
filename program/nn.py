@@ -1,12 +1,7 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-# TensorFlow and tf.keras
-import tensorflow as tf
 from tensorflow import keras
-
-# Helper libraries
 import numpy as np
 import cv2
+import tensorflow as tf
 from image_helper import image_resize
 from nn_result import NNResult
 import os
@@ -15,101 +10,73 @@ import matplotlib.pyplot as plt
 import random
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import OneHotEncoder
 from keras.utils import to_categorical
 
-ctr = 0
+frame_counter = 0
 class_names = ['steering', 'shifting', 'wrong']
 
-model = None
-modelName = "model_15_45.dat"
+saved_model = None
+# model_name = "model_15_45.dat"
 
 
-def save_train_frame(frame, classType, width=64):
+def save_train_frame(frame, model_path,  class_type, width=64):
     frame = image_resize(frame, width)
-    global ctr
-    path = "./program/train_nn/" + classType + "/" + classType + str(ctr) + ".png"
+    global frame_counter
+    path = model_path + class_type + "/" + class_type + str(frame_counter) + ".png"
     print(path)
     cv2.imwrite(path, frame)
-    ctr += 1
+    frame_counter += 1
 
 
-def load_images_from_folder(classType, size = 64):
+def load_images_from_folder(model_path, class_type, size=64):
     images = []
     labels = []
-    folder = "./program/train_nn/" + classType + "/"
+    folder = model_path + class_type + "/"
     print("Loading images from: ", folder)
     for filename in os.listdir(folder):
         img = cv2.imread(os.path.join(folder, filename), cv2.IMREAD_GRAYSCALE)
         img = cv2.resize(img, (size, size))
         if img is not None:
             images.append(np.array(img))
-            labels.append(get_class_index(classType))
-    print("Done. (" + str(len(images)) + " images)")
+            labels.append(get_class_index(class_type))
+    print("Loading finished. Loaded " + str(len(images)) + " images)")
     return images, labels
 
 
-def get_class_index(classType):
-    if classType == "steering":
+def get_class_index(class_type):
+    try:
+        return class_names.index(class_type)
+    except ValueError:
         return 0
-    elif classType == "shifting":
-        return 1
-    elif classType == "wrong":
-        return 2
 
-
-def run_train():
-    size = 32
-    # class_names = ['steering', 'shifting']
-    steering_images, steering_labels = load_images_from_folder("steering", size)
-    shifting_images, shifting_labels = load_images_from_folder("shifting", size)
-    wrong_images, wrong_labels = load_images_from_folder("wrong", size)
-
+def run_train(args, size = 32):
+    steering_images, steering_labels = load_images_from_folder(args.path, "steering", size)
+    shifting_images, shifting_labels = load_images_from_folder(args.path, "shifting", size)
+    wrong_images, wrong_labels = load_images_from_folder(args.path, "wrong", size)
 
     train_images = steering_images + shifting_images + wrong_images
     train_labels = steering_labels + shifting_labels + wrong_labels
 
-    c = list(zip(train_images, train_labels))
-    random.shuffle(c)
+    joined_images_with_labels = list(zip(train_images, train_labels))
+    random.shuffle(joined_images_with_labels)
 
-    train_images, train_labels = zip(*c)
+    train_images, train_labels = zip(*joined_images_with_labels)
 
     train_images = np.array(train_images)
     train_labels = np.array(train_labels)
 
     train_images = train_images / 255.0
-
     train_images, test_images, train_labels, test_labels = train_test_split(train_images, train_labels, test_size=0.1)
 
     matplotlib.use('TKAgg', warn=False, force=True)
 
-    # print(train_images.shape)  # (9584, 64, 64)
-    # print(train_labels.shape)  # (9584,)
-
-    # print(test_images.shape)  # (2396, 64, 64)
-    # print(test_labels.shape)  # (2396,)
-
     train_images = train_images.reshape(train_images.shape[0], size, size, 1)
     test_images = test_images.reshape(test_images.shape[0], size, size, 1)
 
-    # print("after reshape: ")
-    # print(train_images.shape)  # (9584, 64, 64)
-    # print(train_labels.shape)  # (9584,)
-
-    # print(test_images.shape)  # (2396, 64, 64)
-    # print(test_labels.shape)  # (2396,)
-
-    #one-hot encode target column
     train_labels = to_categorical(train_labels)
     test_labels = to_categorical(test_labels)
 
-    # print("after one-hot: ")
-    # print(train_images.shape)  # (9584, 64, 64)
-    # print(train_labels.shape)  # (9584,)
-
-    # print(test_images.shape)  # (2396, 64, 64)
-    # print(test_labels.shape)  # (2396,)
-
+    # define layers for model
     model = keras.Sequential([
         keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(size, size, 1)),
         keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),
@@ -118,80 +85,77 @@ def run_train():
         keras.layers.Dense(128, activation='relu'),
         keras.layers.Dense(3, activation='softmax')
     ])
-    model.compile(optimizer='adam',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    train_history = model.fit(train_images, train_labels, validation_data=(test_images, test_labels), epochs=12, batch_size=128)
-    
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    train_history = model.fit(train_images, train_labels, validation_data=(test_images, test_labels), epochs=args.epochs, batch_size=128)
 
-    tf.compat.v1.keras.models.save_model(model, modelName)
+    # save model to filesystem
+    tf.compat.v1.keras.models.save_model(model, args.modelName)
 
     print_accurancy(model, test_images, test_labels)
-    show_loss(train_history, modelName)
-    show_accuracy(train_history, modelName)
+
+    # show and save results from training
+    show_loss(args, train_history)
+    show_accuracy(args, train_history)
 
 
-def show_accuracy(data, modelName):
+def show_accuracy(args, data):
     plt.plot(data.history['acc'])
     plt.plot(data.history['val_acc'])
     plt.title('Model accuracy')
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
-    # plt.show()
-    plt.savefig('loss_' + modelName +  '.pdf')
+    plt.savefig('accuracy_' + args.modelName + '.pdf')
     plt.clf()
 
 
-def show_loss(data, modelName):
+def show_loss(args, data):
     plt.plot(data.history['loss'])
     plt.plot(data.history['val_loss'])
     plt.title('Model loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
-    # plt.show()
-    plt.savefig('accuracy_' + modelName + '.pdf')
+    plt.savefig('loss_' + args.modelName + '.pdf')
     plt.clf()
 
 
 def print_accurancy(model, test_images, test_labels):
-    y_pred = model.predict(test_images)
-    #Converting predictions to label
-    pred = list()
-    for i in range(len(y_pred)):
-        pred.append(np.argmax(y_pred[i]))
-    #Converting one hot encoded test label to label
-    test = list()
-    for i in range(len(test_labels)):
-        test.append(np.argmax(test_labels[i]))
-    a = accuracy_score(pred, test)
-    print('Final Accuracy is:', a*100 , '%')
+    # converting predictions to label
+    y_prediction = model.predict(test_images)
+    prediction_list = list()
+    for i in range(len(y_prediction)):
+        prediction_list.append(np.argmax(y_prediction[i]))
 
-def evaluate(frame, size, printInfo = False):
-    # frame = image_resize(frame, size)
+    # converting one hot encoded test label to label
+    test_list = list()
+    for i in range(len(test_labels)):
+        test_list.append(np.argmax(test_labels[i]))
+    final_accuracy = accuracy_score(prediction_list, test_list)
+    print('Final accuracy is:', final_accuracy * 100, '%')
+
+
+def evaluate(args, frame, size, printInfo=False):
     frame = cv2.resize(frame, (size, size))
     frame = np.array([frame])
-    global model
-    if model is None:
-        model = tf.compat.v1.keras.models.load_model(modelName)
+    global saved_model
+    if saved_model is None:
+        saved_model = tf.compat.v1.keras.models.load_model(args.modelName)
 
     frame = frame.reshape(frame.shape[0], size, size, 1)
-    prediction = model.predict(frame)[0]
+    prediction = saved_model.predict(frame)[0]
     label = ""
     result = NNResult()
     for i in range(len(prediction)):
-        label  += class_names[i] + ': ' + str(prediction[i] * 100) + " %.\t"
+        label += class_names[i] + ': ' + str(prediction[i] * 100) + " %.\t"
         result[class_names[i]] = prediction[i] * 100
-    if(printInfo == True):
+    if printInfo is True:
         result.print_info()
     return result
 
 
-
-
-def run_test():
-    test_images, test_labels = load_images_from_folder("test")
+def run_test(args):
+    test_images, test_labels = load_images_from_folder(args.path, "test")
     test_images = np.array(test_images) / 255.0
 
     print("loading model...")
@@ -205,7 +169,7 @@ def run_test():
     matplotlib.use('TKAgg', warn=False, force=True)
 
     num_rows = 5
-    num_cols = 6    
+    num_cols = 6
     num_images = num_rows*num_cols
     plt.figure(figsize=(2*2*num_cols, 2*num_rows))
 
@@ -230,11 +194,7 @@ def plot_image(i, predictions_array, true_label, img):
     else:
         color = 'red'
 
-    
-    plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
-                                         100*np.max(predictions_array),
-                                         class_names[true_label]),
-               color=color)
+    plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label], 100 * np.max(predictions_array), class_names[true_label]), color=color)
 
 
 def plot_value_array(i, predictions_array, true_label):
@@ -245,11 +205,10 @@ def plot_value_array(i, predictions_array, true_label):
     thisplot = plt.bar(range(2), predictions_array, color="#777777")
     plt.ylim([0, 1])
     predicted_label = np.argmax(predictions_array)
-
     thisplot[predicted_label].set_color('red')
     thisplot[true_label].set_color('blue')
 
 
-def draw_nn_result(frame, text, pos, color):
-    cv2.putText(frame, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
+def draw_nn_result(frame, text, label_position, color):
+    cv2.putText(frame, text, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
     return frame

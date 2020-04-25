@@ -17,20 +17,31 @@ class NNResult:
 
     def process_result(self):
         maximum = 0
-        className = ""
+        class_name = ""
         color = (0, 0, 255)
         for attr, value in self.__dict__.items():
             if(value > maximum):
-                className = attr
+                class_name = attr
                 maximum = value
-                color = self.get_class_color(className)
-        text = className + ": " + str(round(maximum, 2)) + " %"
-        return text, color, className
+                color = self.get_class_color(class_name)
+        text = class_name + ": " + str(round(maximum, 2)) + " %"
+        return text, color, class_name
 
-    def get_class_color(self, className):
-        if className == "steering":
+    def get_class_color(self, class_name):
+        if class_name == "steering":
             return (0, 255, 0)
-        elif className == "shifting":
+        elif class_name == "shifting":
             return (0, 127, 255)
         else:
             return (0, 0, 255)
+
+class NN_result_counter:
+    def __init__(self):
+        self.steering = 0
+        self.shifting = 0
+        self.wrong = 0
+
+    def increment(self, class_name):
+        if class_name is not None:
+            temp = getattr(self, class_name) + 1
+            setattr(self, class_name, temp)

@@ -4,11 +4,11 @@ import math
 
 def detect_head_orientation(frame, shape):
 
+    #2D image points of face
     input_image = frame.shape
-    #2D image points. If you change the image, you need to change vector
     image_points = np.array([
         shape[33],     # Nose tip
-        shape[8],     # Chin
+        shape[8],      # Chin
         shape[36],     # Left eye left corner
         shape[45],     # Right eye right corne
         shape[48],     # Left Mouth corner
@@ -26,8 +26,7 @@ def detect_head_orientation(frame, shape):
 
     ])
 
-
-    # Camera matrix calcualtion
+    # camera matrix calcualtion
     focal_length = input_image[1]
     center = (input_image[1]/2, input_image[0]/2)
     camera_matrix = np.array(
@@ -38,32 +37,21 @@ def detect_head_orientation(frame, shape):
         ], dtype="double"
     )
 
-    # print ("Camera Matrix :\n {0}".format(camera_matrix))
+    # define lens disortion
+    dist_coeffs = np.zeros((4, 1))
 
-    dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
-    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points_3d, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+    # estimates the object pose given a set of object points, their corresponding image projections, as well as the camera matrix and the distortion coefficients
+    success, rotation_vector, translation_vector = cv2.solvePnP(model_points_3d, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
     # print ("Rotation Vector:\n {0}".format(rotation_vector))
     # print ("Translation Vector:\n {0}".format(translation_vector))
 
-
-    # Project a 3D point (0, 0, 1000.0) onto the image plane.
-    # We use this to draw a line sticking out of the nose
-
-
-    (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
-
-    #for p in image_points:
-    #    cv2.circle(frame, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
-
+    nose_end_point_2D, jacobian = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
 
     p1 = (int(image_points[0][0]), int(image_points[0][1]))
-    p2 = (int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
+    p2 = (int(nose_end_point_2D[0][0][0]), int(nose_end_point_2D[0][0][1]))
     angle = int(round(math.degrees(math.atan2(p2[1] - p1[1], p2[0] - p1[0]))))
-
     return (p1, p2, angle)
-
-    # draw_head_orientation(frame, p1, p2, angle)
 
 
 
@@ -72,8 +60,6 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst, args):
     angle2 = 100
     length = 110
     result = False
-
-    # print(angle_dst)
 
     if args.detectHeadLimit is False:
         cv2.line(frame, p_src, p_dst, (255, 0, 20), 3)
@@ -97,11 +83,16 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst, args):
     return result
 
 
-def draw_head_orientation_info(frame, res, pos):
-    if res == -1:
-        cv2.putText(frame, "HEAD POSITION: SKIP ", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 127), 3)
-    elif res:
-        cv2.putText(frame, "HEAD POSITION: OK ", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 10), 3)
+def draw_head_orientation_info(frame, result, label_position):
+    # skip head orientation
+    if result == -1:
+        cv2.putText(frame, "HEAD POSITION: SKIP ", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 127), 3)
+
+    # head is in given range
+    elif result:
+        cv2.putText(frame, "HEAD POSITION: OK ", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 10), 3)
+    
+    # head is out of range
     else:
-        cv2.putText(frame, "HEAD POSITION: OUT OF RANGE", pos, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        cv2.putText(frame, "HEAD POSITION: OUT OF RANGE", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     return frame
