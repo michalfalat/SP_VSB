@@ -99,7 +99,6 @@ def get_human_image(frame, human, poseType, for_nn=False):
         head_thickness = 3
         head_radius = 40
     lineWidth = 8
-    
 
     cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
 
@@ -163,7 +162,7 @@ def get_nn_image(frame, human, poseType):
                 min_y = int(coordinates[i][1])
             elif(coordinates[i][1] > max_y):
                 max_y = int(coordinates[i][1])
-                
+
     width = max_x - min_x
     height = max_y - min_y
 
@@ -176,6 +175,5 @@ def get_nn_image(frame, human, poseType):
         coordinates[i] = tuple(coordinates[i])
 
     crop_img = np.zeros((height+2*offset, width+2*offset, 1), dtype="uint8")
-
 
     return crop_img, coordinates

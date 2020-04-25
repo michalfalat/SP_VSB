@@ -1,11 +1,11 @@
 import time
 import cv2
 from image_helper import image_resize
-from detections import detect_tf_pose, detectLandmarks, draw_landmarks
+from detections import detect_tf_pose, detect_landmarks, draw_landmarks
 from seat_belt import detect_seat_belt, draw_seatbelt_lines, draw_seatbelt_info
 from head_orientation import draw_head_orientation, draw_head_orientation_info
-from openpose_detector import detectOPPose
-from pose_unifier import get_coordinates, get_human_image
+from openpose_detector import detect_op_pose
+from pose_unifier import get_human_image
 from nn import save_train_frame, evaluate, draw_nn_result
 from filters import nn_filter
 from nn_result import NN_result_counter
@@ -48,7 +48,7 @@ def process_video(args):
     length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     total_frames = length
     nn_result_counter = NN_result_counter()
-    nn_result_filtered_counter = NN_result_counter()  
+    nn_result_filtered_counter = NN_result_counter()
 
     while length:
         length -= 1
@@ -71,16 +71,16 @@ def process_video(args):
                     continue
 
             if args.framework == "OP_POSE":
-                humans_detected = detectOPPose(frame_current_resized, args)
+                humans_detected = detect_op_pose(frame_current_resized, args)
                 if humans_detected is None or humans_detected.size < 2 or isinstance(humans_detected, numbers.Number) is True:
                     continue
 
             if humans_detected[0] is not None:
                 people_counter += 1
             frame_nn = get_human_image(frame_current_resized, humans_detected[0], args.framework, True)
-            result_nn = evaluate(frame_nn, 32)
+            result_nn = evaluate(args, frame_nn, 32)
             nn_result_text, nn_color, nn_class_name = result_nn.process_result()
-            cv2.imshow("NN", frame_nn)
+
             nn_result_counter.increment(nn_class_name)
 
             if args.useFiltering is True:
@@ -89,13 +89,14 @@ def process_video(args):
 
             if args.printContinuosStatistics is True:
                 result_nn.print_info()
-        # save_train_frame(frame_nn, "various", 64)
-        # humansOP = detectOPPose(frame_current_resized)
-        # get_human_image(frame_current_resized, humansOP[0], "OP", True)
+
+        if args.saveTrainImage is True:
+            save_train_frame(frame_nn, args.saveTrainImagePath, 64)
+            cv2.imshow("Neural network - train image", frame_nn)
 
         # HEAD ORIENTATION
         if args.detectHeadOrientation is True:
-            landmarks = detectLandmarks(frame_current_resized, text_from_top, args.imagePrintStatistics)
+            landmarks = detect_landmarks(frame_current_resized, text_from_top, args.imagePrintStatistics)
 
             for (i, rect) in enumerate(landmarks):
                 frame, p_1, p_2, angle = draw_landmarks(frame, rect)
@@ -106,7 +107,6 @@ def process_video(args):
 
             if args.imagePrintStatistics is True:
                 text_from_top += 50
-
 
         # SEAT BELT DETECTION
         # actually not used, but working correctly
@@ -130,7 +130,6 @@ def process_video(args):
 
         if args.showOutput is True:
             cv2.imshow("Result", frame)
-            #cv2.imshow("Result NN", frame_nn)
 
         new_time = time.time()
         time_dif = new_time - old_time
@@ -146,7 +145,6 @@ def process_video(args):
         if cv2.waitKey(40) == 27:
             break
 
-        # frame_prev_resized = frame_current_resized
     cap.release()
 
     if args.printFinalStatistics is True:
@@ -160,6 +158,7 @@ def process_video(args):
         print("TOTAL FRAMES:          \t\t" + str(not_skipped_counter))
         print("HUMANS DETECTED:       \t\t" + str(people_counter))
         print("HUMANS DETECTED [%]:   \t\t" + str(people_counter / not_skipped_counter * 100) + "%")
+
         print("\n-----NN ANALYZATOR RESULT-----")
         print("STEERING:              \t\t" + str(nn_result_counter.steering))
         print("STEERING [%]:          \t\t" + str(nn_result_counter.steering / not_skipped_counter * 100) + "%")
@@ -175,8 +174,6 @@ def process_video(args):
         print("SHIFTING [%]:          \t\t" + str(nn_result_filtered_counter.shifting / not_skipped_counter * 100) + "%")
         print("WRONG:              \t\t" + str(nn_result_filtered_counter.wrong))
         print("WRONG [%]:          \t\t" + str(nn_result_filtered_counter.wrong / not_skipped_counter * 100) + "%")
-        # print("FACES DETECTED:")
-        # print(FACES_COUNTER)
 
     if args.recordVideo is True:
         print("Saving Video to: " + args.videoOutput)

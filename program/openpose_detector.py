@@ -1,10 +1,7 @@
-# From Python
-# It requires OpenCV installed for Python
 import sys
 import cv2
 import os
 from sys import platform
-import argparse
 
 opWrapper = None
 datum = None
@@ -56,25 +53,12 @@ def initialize(model = "MPI"):
         elif (model == "COCO"):
             poseModel = op.PoseModel.COCO_18
         print(op.getPoseBodyPartMapping(poseModel))
-        # print(op.getPoseNumberBodyParts(poseModel))
-        # print(op.getPosePartPairs(poseModel))
-        # print(op.getPoseMapIndex(poseModel))
-
-
-        # imageToProcess = cv2.imread(args[0].image_path)
-        # datum.cvInputData = imageToProcess
-        # opWrapper.emplaceAndPop([datum])
-        # print("Processing image done. 2 ")
-
-        # Display Image
-        # print("Body keypoints: \n" + str(datum.poseKeypoints))
-        # cv2.waitKey(0)
     except Exception as e:
         print(e)
         sys.exit(-1)
 
 
-def detectOPPose(frame, params):
+def detect_op_pose(frame, params):
     global datum
     global opWrapper
     if opWrapper is None:
@@ -85,4 +69,3 @@ def detectOPPose(frame, params):
     if params.showNativeOutput is True:
         cv2.imshow("OP_POSE native output result", datum.cvOutputData[:, :, :])
     return datum.poseKeypoints
-    #return datum.cvOutputData
