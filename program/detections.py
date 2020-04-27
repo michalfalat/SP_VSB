@@ -51,7 +51,7 @@ def init_hog():
 def init_TF_pose_estimator():
     global TF_POSE_ESTIMATOR
     model = "mobilenet_thin"
-    TF_POSE_ESTIMATOR = TfPoseEstimator(get_graph_path(model), target_size=(216, 184))
+    TF_POSE_ESTIMATOR = TfPoseEstimator(get_graph_path(model), target_size=(216, 216))
     print("TF Pose estimator Initialized!")
 
 

@@ -5,6 +5,7 @@
 /imagesSP
 /__pycache__
 /video_records
+/program/train_nn
 /imageTests
 /program/__pycache__
 /.vscode/.ropeproject

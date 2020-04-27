@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import random
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from keras.utils import to_categorical
+from keras.utils import to_categorical, plot_model
 
 frame_counter = 0
 class_names = ['steering', 'shifting', 'wrong']
@@ -134,6 +134,9 @@ def print_accurancy(model, test_images, test_labels):
     final_accuracy = accuracy_score(prediction_list, test_list)
     print('Final accuracy is:', final_accuracy * 100, '%')
 
+def visualise_model(args):
+    model = tf.compat.v1.keras.models.load_model(args.modelName)
+    tf.keras.utils.plot_model(model, to_file=args.modelName + '_visualisation.png', show_shapes=True, show_layer_names=True)
 
 def evaluate(args, frame, size, printInfo=False):
     frame = cv2.resize(frame, (size, size))
@@ -154,12 +157,12 @@ def evaluate(args, frame, size, printInfo=False):
     return result
 
 
-def run_test(args):
+def run_test(args, size=32):
     test_images, test_labels = load_images_from_folder(args.path, "test")
     test_images = np.array(test_images) / 255.0
 
     print("loading model...")
-    model = tf.compat.v1.keras.models.load_model("model.data")
+    model = tf.compat.v1.keras.models.load_model(args.modelName)
 
     print("Model loaded.")
     print("Testing data...")
