@@ -1,7 +1,7 @@
 import time
 import cv2
 from image_helper import image_resize
-from detections import detect_tf_pose, detect_landmarks, draw_landmarks
+from detections import detect_tf_pose, detect_landmarks, draw_landmarks, draw_no_face
 from seat_belt import detect_seat_belt, draw_seatbelt_lines, draw_seatbelt_info
 from head_orientation import draw_head_orientation, draw_head_orientation_info
 from openpose_detector import detect_op_pose
@@ -95,11 +95,16 @@ def process_video(args):
             save_train_frame(frame_nn, args.saveTrainImagePath, 64)
             cv2.imshow("Neural network - train image", frame_nn)
 
+        if args.detectBody is True:
+            frame = get_human_image(frame, humans_detected[0], args.framework)
+
         # HEAD ORIENTATION
         if args.detectHeadOrientation is True:
-            landmarks = detect_landmarks(frame_current_resized, text_from_top, args.imagePrintStatistics)
+            landmarks = detect_landmarks(frame_current_resized)
             if len(landmarks) != 0:
                 face_counter += 1
+            else:
+                draw_no_face(frame, text_from_top, args.imagePrintStatistics)
 
             for (i, rect) in enumerate(landmarks):
                 frame, p_1, p_2, angle = draw_landmarks(frame, rect)
@@ -128,8 +133,6 @@ def process_video(args):
             frame = draw_nn_result(frame, nn_result_text, (10, text_from_top), nn_color)
             text_from_top += 50
 
-        if args.detectBody is True:
-            frame = get_human_image(frame, humans_detected[0], args.framework)
 
         if args.showOutput is True:
             cv2.imshow("Result", frame)

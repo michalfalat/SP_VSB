@@ -33,7 +33,7 @@ def detect_head_orientation(frame, shape, x_offset, y_offset):
         [
             [focal_length,  0,            center[0]],
             [0,             focal_length, center[1]],
-            [0,             0,            1       ]
+            [0,             0,            1]
         ], dtype="double"
     )
 
@@ -53,21 +53,20 @@ def detect_head_orientation(frame, shape, x_offset, y_offset):
     angle = int(round(math.degrees(math.atan2(p2[1] - p1[1], p2[0] - p1[0]))))
     return (p1, p2, angle)
 
-
-
 def draw_head_orientation(frame, p_src, p_dst, angle_dst, args):
     angle1 = 2
     angle2 = 100
     length = 110
     result = False
+    p_dst_filtered = filter_outbound_lines(frame, p_src, p_dst)
 
     if args.detectHeadLimit is False:
-        cv2.line(frame, p_src, p_dst, (255, 0, 20), 3)
+        cv2.line(frame, p_src, p_dst_filtered, (255, 0, 20), 4)
         result = True
     elif(angle_dst < angle1 or angle_dst > angle2):
-        cv2.line(frame, p_src, p_dst, (10, 0, 255), 3)
+        cv2.line(frame, p_src, p_dst_filtered, (10, 0, 255), 4)
     else:
-        cv2.line(frame, p_src, p_dst, (255, 0, 0), 2)
+        cv2.line(frame, p_src, p_dst_filtered, (255, 0, 0), 3)
         result = True
 
     p1_x = int(round(p_src[0] + length * np.cos(angle1 * np.pi / 180.0)))
@@ -77,10 +76,18 @@ def draw_head_orientation(frame, p_src, p_dst, angle_dst, args):
     p2_y = int(round(p_src[1] + length * np.sin(angle2 * np.pi / 180.0)))
 
     if args.detectHeadLimit is True:
-        cv2.line(frame, p_src, (p1_x, p1_y), (0, 127, 255), 1)
-        cv2.line(frame, p_src, (p2_x, p2_y), (0, 127, 255), 1)
+        cv2.line(frame, p_src, (p1_x, p1_y), (0, 127, 255), 2)
+        cv2.line(frame, p_src, (p2_x, p2_y), (0, 127, 255), 2)
 
     return result
+
+
+def filter_outbound_lines(frame, p_src, p_dst):
+    image_h, image_w = frame.shape[:2]
+    if p_dst is None or p_dst[0] < 0 or p_dst[1] < 0 or p_dst[0] > image_w or p_dst[1] > image_h:
+        return p_src
+    else:
+        return p_dst
 
 
 def draw_head_orientation_info(frame, result, label_position):
@@ -91,7 +98,7 @@ def draw_head_orientation_info(frame, result, label_position):
     # head is in given range
     elif result:
         cv2.putText(frame, "HEAD POSITION: OK ", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 10), 3)
-    
+
     # head is out of range
     else:
         cv2.putText(frame, "HEAD POSITION: OUT OF RANGE", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)

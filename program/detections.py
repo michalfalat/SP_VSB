@@ -25,6 +25,9 @@ CROP_X = None
 CROP_HEIGHT = None
 CROP_Y = None
 CROP_WIDTH = None
+LANDMARK_MEMORY_THRESHOLD = 15
+LANDMARK_MEMORY_COUNTER = 0
+LANDMARK_MEMORY = None
 
 # INITS
 def init_face_cascade():
@@ -87,7 +90,7 @@ def detect_face(frame):
     return frame
 
 
-def detect_landmarks(frame, top, printImageStatistics):
+def detect_landmarks(frame):
     global FACE_PREDICTOR
     global FACE_DETECTOR
     if FACE_PREDICTOR is None or FACE_DETECTOR is None:
@@ -97,10 +100,26 @@ def detect_landmarks(frame, top, printImageStatistics):
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     landmarks = FACE_DETECTOR(gray, 0)
 
-    if len(landmarks) == 0 and printImageStatistics is True:
-        cv2.putText(frame, "HEAD POSITION: -", (10, top), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 140, 255), 3)
+    return landmark_filter(landmarks)
 
-    return landmarks
+def landmark_filter(landmarks):
+    global LANDMARK_MEMORY_THRESHOLD
+    global LANDMARK_MEMORY_COUNTER
+    global LANDMARK_MEMORY
+
+    if len(landmarks) != 0:
+        LANDMARK_MEMORY = landmarks
+        LANDMARK_MEMORY_COUNTER = 0
+    else:
+        LANDMARK_MEMORY_COUNTER += 1
+        if LANDMARK_MEMORY_COUNTER > LANDMARK_MEMORY_THRESHOLD:
+            LANDMARK_MEMORY = landmarks
+    return LANDMARK_MEMORY
+
+def draw_no_face(frame, top, printImageStatistics):
+    if printImageStatistics is True:
+        cv2.putText(frame, "HEAD POSITION: NOT DETECTED", (10, top), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 140, 255), 3)
+
 
 def get_crop(frame):
     global IMAGE_H

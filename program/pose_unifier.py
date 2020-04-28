@@ -100,7 +100,7 @@ def get_human_image(frame, human, poseType, for_nn=False):
         head_radius = 40
     lineWidth = 8
 
-    cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
+    # cv2.circle(frameCopy, coordinates[0], head_radius, color, head_thickness)
 
     if coordinates_exists(coordinates[0], coordinates[1]):  # head to neck
         cv2.line(frameCopy, coordinates[0], coordinates[1], color, lineWidth)
