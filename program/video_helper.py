@@ -44,6 +44,7 @@ def process_video(args):
     time_sum = 0
     counter = 0
     people_counter = 0
+    face_counter = 0
     skipped_frame_counter = 0
     length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     total_frames = length
@@ -97,6 +98,8 @@ def process_video(args):
         # HEAD ORIENTATION
         if args.detectHeadOrientation is True:
             landmarks = detect_landmarks(frame_current_resized, text_from_top, args.imagePrintStatistics)
+            if len(landmarks) != 0:
+                face_counter += 1
 
             for (i, rect) in enumerate(landmarks):
                 frame, p_1, p_2, angle = draw_landmarks(frame, rect)
@@ -156,8 +159,10 @@ def process_video(args):
         print("TOTAL TIME:            \t\t" + str(time_sum))
         print("AVERAGE TIME:          \t\t" + str(time_sum/not_skipped_counter))
         print("TOTAL FRAMES:          \t\t" + str(not_skipped_counter))
-        print("HUMANS DETECTED:       \t\t" + str(people_counter))
-        print("HUMANS DETECTED [%]:   \t\t" + str(people_counter / not_skipped_counter * 100) + "%")
+        print("FACES DETECTED:       \t\t" + str(face_counter))
+        print("FACES DETECTED [%]:   \t\t" + str(face_counter / not_skipped_counter * 100) + "%")
+        print("HUMAN BODIES DETECTED:\t\t" + str(people_counter))
+        print("HUMAN BODIES DETECTED [%]:\t" + str(people_counter / not_skipped_counter * 100) + "%")
 
         print("\n-----NN ANALYZATOR RESULT-----")
         print("STEERING:              \t\t" + str(nn_result_counter.steering))

@@ -19,7 +19,12 @@ FACES_COUNTER = 0
 FACE_DETECTOR = None
 FACE_PREDICTOR = None
 TF_POSE_ESTIMATOR = None
-
+IMAGE_H = None
+IMAGE_W = None
+CROP_X = None
+CROP_HEIGHT = None
+CROP_Y = None
+CROP_WIDTH = None
 
 # INITS
 def init_face_cascade():
@@ -83,30 +88,44 @@ def detect_face(frame):
 
 
 def detect_landmarks(frame, top, printImageStatistics):
-    global FACES_COUNTER
     global FACE_PREDICTOR
     global FACE_DETECTOR
     if FACE_PREDICTOR is None or FACE_DETECTOR is None:
         init_face_prediction()
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    rects = FACE_DETECTOR(gray, 0)
+    crop, crop_x, crop_y = get_crop(frame)
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    landmarks = FACE_DETECTOR(gray, 0)
 
-    FACES_COUNTER += len(rects)
-
-    if len(rects) == 0 and printImageStatistics is True:
+    if len(landmarks) == 0 and printImageStatistics is True:
         cv2.putText(frame, "HEAD POSITION: -", (10, top), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 140, 255), 3)
 
-    return rects
+    return landmarks
 
+def get_crop(frame):
+    global IMAGE_H
+    global IMAGE_W
+    global CROP_X
+    global CROP_HEIGHT
+    global CROP_Y
+    global CROP_WIDTH
+    if IMAGE_H is None:
+        IMAGE_H, IMAGE_W = frame.shape[:2]
+        CROP_X = int(IMAGE_W / 4)
+        CROP_HEIGHT = int(IMAGE_H / 2)
+        CROP_Y = int(IMAGE_H / 4)
+        CROP_WIDTH = int(IMAGE_W / 2)
+
+    return frame[CROP_Y:CROP_Y+CROP_HEIGHT, CROP_X:CROP_X+CROP_WIDTH], CROP_X, CROP_Y
 
 def draw_landmarks(frame, rect):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    crop, crop_x, crop_y = get_crop(frame)
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     shape = FACE_PREDICTOR(gray, rect)
     shape = face_utils.shape_to_np(shape)
-    p_1, p_2, angle = detect_head_orientation(frame, shape)
+    p_1, p_2, angle = detect_head_orientation(frame, shape, crop_x, crop_y)
     for (x, y) in shape:
-        cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+        cv2.circle(frame, (x + crop_x, y + crop_y), 2, (0, 255, 0), -1)
     return frame, p_1, p_2, angle
 
 

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 
-def detect_head_orientation(frame, shape):
+def detect_head_orientation(frame, shape, x_offset, y_offset):
 
     #2D image points of face
     input_image = frame.shape
@@ -48,8 +48,8 @@ def detect_head_orientation(frame, shape):
 
     nose_end_point_2D, jacobian = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
 
-    p1 = (int(image_points[0][0]), int(image_points[0][1]))
-    p2 = (int(nose_end_point_2D[0][0][0]), int(nose_end_point_2D[0][0][1]))
+    p1 = (int(x_offset + image_points[0][0]), y_offset + int(image_points[0][1]))
+    p2 = (int(x_offset + nose_end_point_2D[0][0][0]), y_offset + int(nose_end_point_2D[0][0][1]))
     angle = int(round(math.degrees(math.atan2(p2[1] - p1[1], p2[0] - p1[0]))))
     return (p1, p2, angle)
 
