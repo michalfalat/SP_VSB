@@ -21,6 +21,7 @@ This repository contains set of tools to analyze  driver's behaviour during driv
 * CUDA 10.1
 * OpenPose instalation + datasets to use (more info on [official Openpose GitHub](https://github.com/CMU-Perceptual-Computing-Lab/openpose))
 * TF Pose estimation installation  + datasets to use (more info on [official TF Pose estimation GitHub](https://github.com/ildoonet/tf-pose-estimation))
+* dlib
 * Lot of luck :) 
 
 
@@ -37,7 +38,7 @@ python main.py  --video-input testVideo.mp4
 ```
 --video-input  <value>              // input video name (default: testVideo.mp4)
 --framework  <value>                // framework to use (TF_POSE or OP_POSE) (default: OP_POSE)
---model_name  <value>               // trained model name from neural network (default: defaultModel.data)
+--model_name  <value>               // trained model name from neural network (default: defaultModel.keras)
 --save-train_image                  // save frames for neural network training
 --save-train_image_path  <value>    // path for saving train image
 --op-dataset  <value>               // MPI or COCO (default: COCO)
@@ -70,10 +71,19 @@ python train_nn.py
 
 ## List of existing arguments for train_nn.py
 ```
---model_name  <value>               // trained model name from neural network (default: defaultModel.data)
+--model_name  <value>               // trained model name from neural network (default: defaultModel.keras)
 --path  <value>                     // path to folder, which contains training images (default: './program/train_nn/')
 --epochs  <value>                   // number of training epochs (default: 12)
 ```
+
+# Video examples
+## Face detection
+[![Detecting driver's head orientation with OpenCV + dlib](https://img.youtube.com/vi/EBGQGfjfR90/0.jpg)](https://www.youtube.com/watch?v=EBGQGfjfR90)
+
+## Face detection with pose estimation
+[![Analysis of driver's pose in vehicle using OpenCV, OpenPose and neural network](https://img.youtube.com/vi/YZZKmbFHqhU/0.jpg)](https://www.youtube.com/watch?v=YZZKmbFHqhU)
+
+
 
 ## More info will be added soon...
 
