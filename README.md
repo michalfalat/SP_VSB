@@ -38,9 +38,9 @@ python main.py  --video-input testVideo.mp4
 ```
 --video-input  <value>              // input video name (default: testVideo.mp4)
 --framework  <value>                // framework to use (TF_POSE or OP_POSE) (default: OP_POSE)
---model_name  <value>               // trained model name from neural network (default: defaultModel.keras)
---save-train_image                  // save frames for neural network training
---save-train_image_path  <value>    // path for saving train image
+--model-name  <value>               // trained model name from neural network (default: defaultModel.keras)
+--save-train-image                  // save frames for neural network training
+--save-train-image-path  <value>    // path for saving train image
 --op-dataset  <value>               // MPI or COCO (default: COCO)
 --init-frame  <value>               // starting frame of video (default: 0)
 --record-video                      // if proceeded video should be saved to filesystem 
@@ -71,7 +71,7 @@ python train_nn.py
 
 ## List of existing arguments for train_nn.py
 ```
---model_name  <value>               // trained model name from neural network (default: defaultModel.keras)
+--model-name  <value>               // trained model name from neural network (default: defaultModel.keras)
 --path  <value>                     // path to folder, which contains training images (default: './program/train_nn/')
 --epochs  <value>                   // number of training epochs (default: 12)
 ```

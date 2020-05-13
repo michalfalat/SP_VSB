@@ -4,7 +4,6 @@ import math
 
 def detect_head_orientation(frame, shape, x_offset, y_offset):
 
-    #2D image points of face
     input_image = frame.shape
     image_points = np.array([
         shape[33],     # Nose tip
@@ -15,7 +14,6 @@ def detect_head_orientation(frame, shape, x_offset, y_offset):
         shape[54]      # Right mouth corner
     ], dtype="double")
 
-    # 3D model points.
     model_points_3d = np.array([
         (0.0, 0.0, 0.0),             # Nose tip
         (0.0, -330.0, -65.0),        # Chin
@@ -26,7 +24,6 @@ def detect_head_orientation(frame, shape, x_offset, y_offset):
 
     ])
 
-    # camera matrix calcualtion
     focal_length = input_image[1]
     center = (input_image[1]/2, input_image[0]/2)
     camera_matrix = np.array(
@@ -36,11 +33,7 @@ def detect_head_orientation(frame, shape, x_offset, y_offset):
             [0,             0,            1]
         ], dtype="double"
     )
-
-    # define lens disortion
     dist_coeffs = np.zeros((4, 1))
-
-    # estimates the object pose given a set of object points, their corresponding image projections, as well as the camera matrix and the distortion coefficients
     success, rotation_vector, translation_vector = cv2.solvePnP(model_points_3d, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
     # print ("Rotation Vector:\n {0}".format(rotation_vector))
