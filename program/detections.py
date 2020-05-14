@@ -34,7 +34,7 @@ def init_face_cascade():
     """init_face_cascade"""
     global FACE_CASCADE
     global FACES_COUNTER
-    path = "\\datasets\\haarcascade_frontalface_default.xml"
+    path = "\\models\\haarcascade_frontalface_default.xml"
     FACE_CASCADE = cv2.CascadeClassifier(str(Path(__file__).resolve().parent) + path)
     FACES_COUNTER = 0
     print("FACE_CASCADE Initialized!")
@@ -43,7 +43,7 @@ def init_face_cascade():
 def init_face_prediction():
     global FACE_DETECTOR
     global FACE_PREDICTOR
-    path = "\\datasets\\shape_predictor_68_face_landmarks.dat"
+    path = "\\models\\shape_predictor_68_face_landmarks.dat"
     FACE_DETECTOR = dlib.get_frontal_face_detector()
     FACE_PREDICTOR = dlib.shape_predictor(str(Path(__file__).resolve().parent) + path)
     print("FACE_DETECTOR Initialized!")

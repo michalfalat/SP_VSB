@@ -35,10 +35,6 @@ def detect_head_orientation(frame, shape, x_offset, y_offset):
     )
     dist_coeffs = np.zeros((4, 1))
     success, rotation_vector, translation_vector = cv2.solvePnP(model_points_3d, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
-
-    # print ("Rotation Vector:\n {0}".format(rotation_vector))
-    # print ("Translation Vector:\n {0}".format(translation_vector))
-
     nose_end_point_2D, jacobian = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
 
     p1 = (int(x_offset + image_points[0][0]), y_offset + int(image_points[0][1]))

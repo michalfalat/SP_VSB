@@ -16,7 +16,6 @@ frame_counter = 0
 class_names = ['steering', 'shifting', 'wrong']
 
 saved_model = None
-# model_name = "model_15_45.dat"
 
 
 def save_train_frame(frame, model_path,  class_type, width=64):
